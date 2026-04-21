@@ -9,7 +9,7 @@ const AddHafalan = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { students, addLog } = useAppStore();
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{student_id:string;juz_id:number;from_ayah:number;to_ayah:number;type:'setoran'|'persiapan_ujian'|'ujian';note:string}>({
     student_id: params.get('student') || '',
     juz_id: 30,
     from_ayah: 1,
