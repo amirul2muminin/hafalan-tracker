@@ -18,7 +18,7 @@ const AddHafalan = () => {
     from_line: 1,
     to_page: 582,
     to_line: 15,
-    type: 'setoran' as const,
+    type: 'setoran' as 'setoran' | 'persiapan_ujian' | 'ujian',
     note: '',
   });
 

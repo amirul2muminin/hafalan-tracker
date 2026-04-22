@@ -64,7 +64,7 @@ export async function fetchTargets(studentId?: string): Promise<TargetHafalan[]>
 }
 
 export async function insertTarget(target: Omit<TargetHafalan, 'id' | 'created_at'>): Promise<TargetHafalan> {
-  const { data, error } = await supabase.from('target_hafalan').insert(target).select().single();
+  const { data, error } = await supabase.from('target_hafalan').insert([target]).select().single();
   if (error) throw error;
   return data;
 }
