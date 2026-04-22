@@ -1,4 +1,4 @@
-import type { DailyLog, ExamSession, MurojaahCycle, Student } from '@/types';
+import type { DailyLog, ExamSession, Student } from '@/types';
 import { linesToPages, pagesToJuz } from './juz-mapping';
 
 // ─── Time helpers ────────────────────────────────────────────
@@ -359,7 +359,7 @@ export function calcStudentRankings(students: Student[], logs: DailyLog[], exams
       linesThisWeek: h.linesThisWeek,
       consistency: h.consistencyScore,
       prepEfficiency: e.avgPrepDays || 0,
-      tier: 'middle' as const,
+      tier: 'middle' as 'top' | 'middle' | 'bottom',
     };
   }).sort((a, b) => b.linesThisWeek - a.linesThisWeek);
 
