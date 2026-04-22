@@ -1,6 +1,9 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Student, DailyLog, ExamSession, TargetHafalan, MurojaahCycle } from '@/types';
+import type { Student, DailyLog, ExamSession, TargetHafalan, MurojaahCycle, StudentProgress } from '@/types';
+import { linesToPages, pagesToJuz } from '@/lib/juz-mapping';
+import * as api from '@/lib/supabase-queries';
+
+const PAGES_SEQUENCE = [3, 6, 9, 12, 15, 18, 20];
 
 interface AppState {
   students: Student[];
@@ -8,87 +11,145 @@ interface AppState {
   exams: ExamSession[];
   targets: TargetHafalan[];
   murojaahCycles: Record<string, MurojaahCycle>;
+  loading: boolean;
 
-  addStudent: (student: Student) => void;
-  removeStudent: (id: string) => void;
-  addLog: (log: DailyLog) => void;
-  addExam: (exam: ExamSession) => void;
-  updateExamStatus: (id: string, status: ExamSession['status']) => void;
-  addTarget: (target: TargetHafalan) => void;
-  updateMurojaahCycle: (studentId: string) => MurojaahCycle;
+  // Fetch
+  fetchAll: () => Promise<void>;
+  fetchStudentData: (studentId: string) => Promise<void>;
+
+  // Mutations
+  addStudent: (name: string) => Promise<void>;
+  removeStudent: (id: string) => Promise<void>;
+  addLog: (log: Omit<DailyLog, 'id' | 'created_at'>) => Promise<void>;
+  addExam: (exam: Omit<ExamSession, 'id' | 'created_at'>) => Promise<void>;
+  updateExamStatus: (id: string, status: ExamSession['status']) => Promise<void>;
+  addTarget: (target: Omit<TargetHafalan, 'id' | 'created_at'>) => Promise<void>;
+  updateMurojaahCycle: (studentId: string) => Promise<MurojaahCycle>;
+
+  // Selectors
   getStudentLogs: (studentId: string) => DailyLog[];
   getStudentExams: (studentId: string) => ExamSession[];
   getStudentTargets: (studentId: string) => TargetHafalan[];
-  getStudentProgress: (studentId: string) => { total_ayah: number; total_juz: number };
+  getStudentProgress: (studentId: string) => StudentProgress;
   getTodayLogs: () => DailyLog[];
 }
 
-const PAGES_SEQUENCE = [3, 6, 9, 12, 15, 18, 20];
+export const useAppStore = create<AppState>()((set, get) => ({
+  students: [],
+  dailyLogs: [],
+  exams: [],
+  targets: [],
+  murojaahCycles: {},
+  loading: false,
 
-export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      students: [
-        { id: '1', name: 'Ahmad Fauzi' },
-        { id: '2', name: 'Fatimah Zahra' },
-        { id: '3', name: 'Muhammad Rizki' },
-        { id: '4', name: 'Aisyah Putri' },
-      ],
-      dailyLogs: [
-        { id: 'l1', student_id: '1', date: new Date().toISOString().split('T')[0], category: 'hafalan_baru', type: 'setoran', juz_id: 30, from_ayah: 1, to_ayah: 11, total_ayah: 11, pages: 1, note: 'Lancar' },
-        { id: 'l2', student_id: '2', date: new Date().toISOString().split('T')[0], category: 'murojaah', type: 'setoran', juz_id: 29, from_ayah: 1, to_ayah: 20, total_ayah: 20, pages: 3, note: '' },
-        { id: 'l3', student_id: '1', date: new Date().toISOString().split('T')[0], category: 'hafalan_baru', type: 'setoran', juz_id: 30, from_ayah: 12, to_ayah: 22, total_ayah: 11, pages: 1, note: '' },
-        { id: 'l4', student_id: '3', date: new Date().toISOString().split('T')[0], category: 'hafalan_baru', type: 'setoran', juz_id: 30, from_ayah: 1, to_ayah: 7, total_ayah: 7, pages: 1, note: 'Perlu perbaikan tajwid' },
-      ],
-      exams: [
-        { id: 'e1', student_id: '1', exam_type: 'quarter_juz', status: 'pending', exam_date: new Date().toISOString().split('T')[0], juz_range: 'Juz 30' },
-        { id: 'e2', student_id: '2', exam_type: 'half_juz', status: 'passed', exam_date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0], juz_range: 'Juz 29' },
-      ],
-      targets: [
-        { id: 't1', student_id: '1', target_type: 'juz', target_value: 5, deadline: '2026-12-31', current_value: 1 },
-        { id: 't2', student_id: '2', target_type: 'juz', target_value: 3, deadline: '2026-08-31', current_value: 2 },
-      ],
-      murojaahCycles: {},
+  fetchAll: async () => {
+    set({ loading: true });
+    try {
+      const [students, dailyLogs, exams, targets] = await Promise.all([
+        api.fetchStudents(),
+        api.fetchDailyLogs(),
+        api.fetchExams(),
+        api.fetchTargets(),
+      ]);
+      set({ students, dailyLogs, exams, targets, loading: false });
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+      set({ loading: false });
+    }
+  },
 
-      addStudent: (student) => set((s) => ({ students: [...s.students, student] })),
-      removeStudent: (id) => set((s) => ({ students: s.students.filter((st) => st.id !== id) })),
-      addLog: (log) => set((s) => ({ dailyLogs: [...s.dailyLogs, log] })),
-      addExam: (exam) => set((s) => ({ exams: [...s.exams, exam] })),
-      updateExamStatus: (id, status) =>
-        set((s) => ({
-          exams: s.exams.map((e) => (e.id === id ? { ...e, status } : e)),
-        })),
-      addTarget: (target) => set((s) => ({ targets: [...s.targets, target] })),
+  fetchStudentData: async (studentId: string) => {
+    try {
+      const [logs, exams, targets, cycle] = await Promise.all([
+        api.fetchDailyLogs(studentId),
+        api.fetchExams(studentId),
+        api.fetchTargets(studentId),
+        api.fetchMurojaahCycle(studentId),
+      ]);
+      set((s) => ({
+        dailyLogs: [
+          ...s.dailyLogs.filter((l) => l.student_id !== studentId),
+          ...logs,
+        ],
+        exams: [
+          ...s.exams.filter((e) => e.student_id !== studentId),
+          ...exams,
+        ],
+        targets: [
+          ...s.targets.filter((t) => t.student_id !== studentId),
+          ...targets,
+        ],
+        murojaahCycles: cycle
+          ? { ...s.murojaahCycles, [studentId]: cycle }
+          : s.murojaahCycles,
+      }));
+    } catch (err) {
+      console.error('Failed to fetch student data:', err);
+    }
+  },
 
-      updateMurojaahCycle: (studentId) => {
-        const cycles = get().murojaahCycles;
-        const current = cycles[studentId] || { student_id: studentId, current_day: 0, current_pages: 0 };
-        const currentIdx = PAGES_SEQUENCE.indexOf(current.current_pages);
-        const nextIdx = currentIdx >= PAGES_SEQUENCE.length - 1 ? 0 : currentIdx + 1;
-        const updated: MurojaahCycle = {
-          student_id: studentId,
-          current_day: current.current_day + 1,
-          current_pages: PAGES_SEQUENCE[nextIdx],
-        };
-        set({ murojaahCycles: { ...cycles, [studentId]: updated } });
-        return updated;
-      },
+  addStudent: async (name: string) => {
+    const student = await api.insertStudent({ name });
+    set((s) => ({ students: [...s.students, student] }));
+  },
 
-      getStudentLogs: (studentId) => get().dailyLogs.filter((l) => l.student_id === studentId),
-      getStudentExams: (studentId) => get().exams.filter((e) => e.student_id === studentId),
-      getStudentTargets: (studentId) => get().targets.filter((t) => t.student_id === studentId),
+  removeStudent: async (id: string) => {
+    await api.deleteStudent(id);
+    set((s) => ({ students: s.students.filter((st) => st.id !== id) }));
+  },
 
-      getStudentProgress: (studentId) => {
-        const logs = get().dailyLogs.filter((l) => l.student_id === studentId && l.category === 'hafalan_baru');
-        const total_ayah = logs.reduce((sum, l) => sum + l.total_ayah, 0);
-        return { total_ayah, total_juz: Math.floor(total_ayah / 604) || (total_ayah > 0 ? 1 : 0) };
-      },
+  addLog: async (log) => {
+    const created = await api.insertDailyLog(log);
+    set((s) => ({ dailyLogs: [created, ...s.dailyLogs] }));
+  },
 
-      getTodayLogs: () => {
-        const today = new Date().toISOString().split('T')[0];
-        return get().dailyLogs.filter((l) => l.date === today);
-      },
-    }),
-    { name: 'quran-tracker-storage' }
-  )
-);
+  addExam: async (exam) => {
+    const created = await api.insertExam(exam);
+    set((s) => ({ exams: [created, ...s.exams] }));
+  },
+
+  updateExamStatus: async (id, status) => {
+    await api.updateExamStatus(id, status);
+    set((s) => ({
+      exams: s.exams.map((e) => (e.id === id ? { ...e, status } : e)),
+    }));
+  },
+
+  addTarget: async (target) => {
+    const created = await api.insertTarget(target);
+    set((s) => ({ targets: [...s.targets, created] }));
+  },
+
+  updateMurojaahCycle: async (studentId: string) => {
+    const cycles = get().murojaahCycles;
+    const current = cycles[studentId] || { student_id: studentId, current_day: 0, current_pages: 0 };
+    const currentIdx = PAGES_SEQUENCE.indexOf(current.current_pages);
+    const nextIdx = currentIdx >= PAGES_SEQUENCE.length - 1 ? 0 : currentIdx + 1;
+    const updated: Omit<MurojaahCycle, 'id'> = {
+      student_id: studentId,
+      current_day: current.current_day + 1,
+      current_pages: PAGES_SEQUENCE[nextIdx],
+      last_completed_date: new Date().toISOString().split('T')[0],
+    };
+    const result = await api.upsertMurojaahCycle(updated);
+    set({ murojaahCycles: { ...cycles, [studentId]: result } });
+    return result;
+  },
+
+  getStudentLogs: (studentId) => get().dailyLogs.filter((l) => l.student_id === studentId),
+  getStudentExams: (studentId) => get().exams.filter((e) => e.student_id === studentId),
+  getStudentTargets: (studentId) => get().targets.filter((t) => t.student_id === studentId),
+
+  getStudentProgress: (studentId) => {
+    const logs = get().dailyLogs.filter((l) => l.student_id === studentId && l.category === 'hafalan_baru');
+    const total_lines = logs.reduce((sum, l) => sum + l.total_lines, 0);
+    const total_pages = linesToPages(total_lines);
+    const total_juz = pagesToJuz(total_pages);
+    return { total_lines, total_pages, total_juz };
+  },
+
+  getTodayLogs: () => {
+    const today = new Date().toISOString().split('T')[0];
+    return get().dailyLogs.filter((l) => l.date === today);
+  },
+}));

@@ -10,6 +10,7 @@ const AddTarget = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { students, addTarget } = useAppStore();
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     student_id: params.get('student') || '',
     target_type: 'juz' as TargetType,
@@ -17,18 +18,22 @@ const AddTarget = () => {
     deadline: '2026-12-31',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.student_id) { toast({ title: 'Pilih murid', variant: 'destructive' }); return; }
-    addTarget({
-      id: Date.now().toString(),
-      student_id: form.student_id,
-      target_type: form.target_type,
-      target_value: form.target_value,
-      deadline: form.deadline,
-    });
-    toast({ title: 'Target berhasil ditambahkan ✅' });
-    navigate(-1);
+    setSubmitting(true);
+    try {
+      await addTarget({
+        student_id: form.student_id,
+        target_type: form.target_type,
+        target_value: form.target_value,
+        deadline: form.deadline,
+      });
+      toast({ title: 'Target berhasil ditambahkan ✅' });
+      navigate(-1);
+    } catch {
+      toast({ title: 'Gagal menyimpan', variant: 'destructive' });
+    } finally { setSubmitting(false); }
   };
 
   return (
@@ -47,10 +52,10 @@ const AddTarget = () => {
         <div>
           <label className="text-xs font-semibold text-foreground mb-1 block">Tipe Target</label>
           <div className="flex gap-2">
-            {(['juz', 'ayah'] as const).map((t) => (
+            {(['juz', 'page', 'line'] as const).map((t) => (
               <button key={t} type="button" onClick={() => setForm({ ...form, target_type: t })}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${form.target_type === t ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                {t === 'juz' ? 'Juz' : 'Ayah'}
+                {t === 'juz' ? 'Juz' : t === 'page' ? 'Halaman' : 'Baris'}
               </button>
             ))}
           </div>
@@ -68,7 +73,9 @@ const AddTarget = () => {
             className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
 
-        <Button type="submit" className="w-full py-3 text-sm font-semibold">Simpan Target</Button>
+        <Button type="submit" className="w-full py-3 text-sm font-semibold" disabled={submitting}>
+          {submitting ? 'Menyimpan...' : 'Simpan Target'}
+        </Button>
       </form>
     </div>
   );

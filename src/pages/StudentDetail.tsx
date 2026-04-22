@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useAppStore } from '@/stores/useAppStore';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
@@ -21,8 +21,12 @@ const tabs = [
 const StudentDetail = () => {
   const { studentId } = useParams();
   const navigate = useNavigate();
-  const { students, getStudentLogs, getStudentExams, getStudentTargets, getStudentProgress, murojaahCycles, updateExamStatus } = useAppStore();
+  const { students, getStudentLogs, getStudentExams, getStudentTargets, getStudentProgress, murojaahCycles, updateExamStatus, fetchStudentData } = useAppStore();
   const [activeTab, setActiveTab] = useState<string>('hafalan');
+
+  useEffect(() => {
+    if (studentId) fetchStudentData(studentId);
+  }, [studentId, fetchStudentData]);
 
   const student = students.find((s) => s.id === studentId);
   if (!student) return <div className="p-4">Murid tidak ditemukan</div>;
@@ -41,9 +45,8 @@ const StudentDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <PageHeader title={student.name} subtitle={`${progress.total_ayah} ayah · ${progress.total_juz} juz`} back />
+      <PageHeader title={student.name} subtitle={`${progress.total_lines} baris · ${progress.total_pages} hal · ${progress.total_juz} juz`} back />
 
-      {/* Progress Header */}
       <div className="px-4 pt-3 pb-2">
         <div className="bg-card rounded-xl p-4 border border-border">
           <div className="flex items-center justify-between mb-2">
@@ -55,23 +58,17 @@ const StudentDetail = () => {
           </div>
           <div className="flex justify-between mt-2">
             <span className="text-[10px] text-muted-foreground">{progress.total_juz} juz</span>
-            <span className="text-[10px] text-muted-foreground">Target: {mainTarget?.target_value || '-'} juz</span>
+            <span className="text-[10px] text-muted-foreground">Target: {mainTarget?.target_value || '-'} {mainTarget?.target_type || 'juz'}</span>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="px-4 pt-2">
         <div className="flex gap-1 bg-muted rounded-xl p-1">
           {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-semibold transition-all',
-                activeTab === tab.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-              )}
-            >
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={cn('flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-semibold transition-all',
+                activeTab === tab.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground')}>
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
             </button>
@@ -79,7 +76,6 @@ const StudentDetail = () => {
         </div>
       </div>
 
-      {/* Tab Content */}
       <div className="px-4 pt-3 space-y-2">
         {activeTab === 'hafalan' && (
           <>
@@ -96,8 +92,8 @@ const StudentDetail = () => {
                   <span className="text-xs font-semibold category-hafalan px-2 py-0.5 rounded-full">{log.type}</span>
                   <span className="text-[10px] text-muted-foreground">{format(new Date(log.date), 'd MMM', { locale: idLocale })}</span>
                 </div>
-                <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id} · Ayah {log.from_ayah}–{log.to_ayah}</p>
-                <p className="text-xs text-muted-foreground">{log.total_ayah} ayah</p>
+                <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id} · Hal {log.from_page}:{log.from_line}–{log.to_page}:{log.to_line}</p>
+                <p className="text-xs text-muted-foreground">{log.total_lines} baris · {log.pages} halaman</p>
                 {log.note && <p className="text-xs text-muted-foreground mt-1 italic">"{log.note}"</p>}
               </div>
             ))}
@@ -126,7 +122,7 @@ const StudentDetail = () => {
                   <span className="text-xs font-semibold category-murojaah px-2 py-0.5 rounded-full">{log.pages} hal</span>
                   <span className="text-[10px] text-muted-foreground">{format(new Date(log.date), 'd MMM', { locale: idLocale })}</span>
                 </div>
-                <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id} · Ayah {log.from_ayah}–{log.to_ayah}</p>
+                <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id} · Hal {log.from_page}:{log.from_line}–{log.to_page}:{log.to_line}</p>
                 {log.note && <p className="text-xs text-muted-foreground mt-1 italic">"{log.note}"</p>}
               </div>
             ))}
@@ -160,7 +156,7 @@ const StudentDetail = () => {
                     {exam.status}
                   </span>
                 </div>
-                <p className="text-sm font-semibold text-foreground mt-1">{exam.juz_range || '-'}</p>
+                <p className="text-sm font-semibold text-foreground mt-1">Juz {exam.juz_start}{exam.juz_end && exam.juz_end !== exam.juz_start ? `–${exam.juz_end}` : ''}</p>
                 <p className="text-xs text-muted-foreground">{format(new Date(exam.exam_date), 'd MMM yyyy', { locale: idLocale })}</p>
                 {exam.status === 'pending' && (
                   <div className="flex gap-2 mt-2">
@@ -183,14 +179,18 @@ const StudentDetail = () => {
             </div>
             {targets.length === 0 && <EmptyState icon={<Target className="w-5 h-5 text-muted-foreground" />} title="Belum ada target" />}
             {targets.map((target) => {
-              const current = target.current_value || (target.target_type === 'juz' ? progress.total_juz : progress.total_ayah);
+              const current = target.current_value || (
+                target.target_type === 'juz' ? progress.total_juz :
+                target.target_type === 'page' ? progress.total_pages :
+                progress.total_lines
+              );
               const tPct = Math.min(100, Math.round((current / target.target_value) * 100));
               const isLate = new Date(target.deadline) < new Date() && tPct < 100;
               const isDone = tPct >= 100;
               return (
                 <div key={target.id} className="bg-card rounded-xl p-4 border border-border">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-foreground">{target.target_value} {target.target_type}</span>
+                    <span className="text-sm font-semibold text-foreground">{target.target_value} {target.target_type === 'page' ? 'halaman' : target.target_type === 'line' ? 'baris' : target.target_type}</span>
                     <span className={cn(
                       'text-[10px] font-semibold px-2 py-0.5 rounded-full',
                       isDone && 'bg-success/10 text-success',

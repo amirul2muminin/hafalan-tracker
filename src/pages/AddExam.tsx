@@ -17,26 +17,33 @@ const AddExam = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { students, addExam } = useAppStore();
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     student_id: params.get('student') || '',
     exam_type: 'quarter_juz' as ExamType,
-    juz_range: '',
+    juz_start: 30,
+    juz_end: 30,
     exam_date: new Date().toISOString().split('T')[0],
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.student_id) { toast({ title: 'Pilih murid', variant: 'destructive' }); return; }
-    addExam({
-      id: Date.now().toString(),
-      student_id: form.student_id,
-      exam_type: form.exam_type,
-      status: 'pending',
-      exam_date: form.exam_date,
-      juz_range: form.juz_range,
-    });
-    toast({ title: 'Ujian berhasil ditambahkan ✅' });
-    navigate(-1);
+    setSubmitting(true);
+    try {
+      await addExam({
+        student_id: form.student_id,
+        exam_type: form.exam_type,
+        status: 'pending',
+        exam_date: form.exam_date,
+        juz_start: form.juz_start,
+        juz_end: form.juz_end,
+      });
+      toast({ title: 'Ujian berhasil ditambahkan ✅' });
+      navigate(-1);
+    } catch {
+      toast({ title: 'Gagal menyimpan', variant: 'destructive' });
+    } finally { setSubmitting(false); }
   };
 
   return (
@@ -64,11 +71,17 @@ const AddExam = () => {
           </div>
         </div>
 
-        <div>
-          <label className="text-xs font-semibold text-foreground mb-1 block">Range Juz</label>
-          <input type="text" value={form.juz_range} onChange={(e) => setForm({ ...form, juz_range: e.target.value })}
-            placeholder="Contoh: Juz 30"
-            className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Juz Mulai</label>
+            <input type="number" min={1} max={30} value={form.juz_start} onChange={(e) => setForm({ ...form, juz_start: +e.target.value })}
+              className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Juz Akhir</label>
+            <input type="number" min={1} max={30} value={form.juz_end} onChange={(e) => setForm({ ...form, juz_end: +e.target.value })}
+              className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          </div>
         </div>
 
         <div>
@@ -77,7 +90,9 @@ const AddExam = () => {
             className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
 
-        <Button type="submit" className="w-full py-3 text-sm font-semibold">Simpan Ujian</Button>
+        <Button type="submit" className="w-full py-3 text-sm font-semibold" disabled={submitting}>
+          {submitting ? 'Menyimpan...' : 'Simpan Ujian'}
+        </Button>
       </form>
     </div>
   );

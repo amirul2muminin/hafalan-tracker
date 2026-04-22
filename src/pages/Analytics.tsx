@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
@@ -6,9 +7,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieCha
 const COLORS = ['hsl(213,94%,56%)', 'hsl(152,69%,41%)', 'hsl(25,95%,53%)', 'hsl(199,89%,48%)'];
 
 const Analytics = () => {
-  const { students, dailyLogs, exams, getStudentProgress } = useAppStore();
+  const { students, dailyLogs, exams, getStudentProgress, fetchAll } = useAppStore();
 
-  // Daily hafalan last 7 days
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
@@ -16,31 +18,28 @@ const Analytics = () => {
     const dayLogs = dailyLogs.filter((l) => l.date === dateStr);
     return {
       day: d.toLocaleDateString('id', { weekday: 'short' }),
-      hafalan: dayLogs.filter((l) => l.category === 'hafalan_baru').reduce((s, l) => s + l.total_ayah, 0),
-      murojaah: dayLogs.filter((l) => l.category === 'murojaah').reduce((s, l) => s + l.total_ayah, 0),
+      hafalan: dayLogs.filter((l) => l.category === 'hafalan_baru').reduce((s, l) => s + l.total_lines, 0),
+      murojaah: dayLogs.filter((l) => l.category === 'murojaah').reduce((s, l) => s + l.total_lines, 0),
     };
   });
 
-  // Exam stats
   const examStats = [
     { name: 'Lulus', value: exams.filter((e) => e.status === 'passed').length },
     { name: 'Pending', value: exams.filter((e) => e.status === 'pending').length },
     { name: 'Gagal', value: exams.filter((e) => e.status === 'failed').length },
   ].filter((e) => e.value > 0);
 
-  // Top students
   const studentProgress = students.map((s) => ({
     name: s.name.split(' ')[0],
-    ayah: getStudentProgress(s.id).total_ayah,
-  })).sort((a, b) => b.ayah - a.ayah).slice(0, 5);
+    baris: getStudentProgress(s.id).total_lines,
+  })).sort((a, b) => b.baris - a.baris).slice(0, 5);
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <PageHeader title="Analitik" subtitle="Statistik hafalan" />
       <div className="px-4 pt-4 space-y-4">
-        {/* Daily Chart */}
         <div className="bg-card rounded-xl p-4 border border-border">
-          <h3 className="text-xs font-bold text-foreground mb-3">Hafalan 7 Hari Terakhir</h3>
+          <h3 className="text-xs font-bold text-foreground mb-3">Hafalan 7 Hari Terakhir (baris)</h3>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={last7}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -56,19 +55,17 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* Student Ranking */}
         <div className="bg-card rounded-xl p-4 border border-border">
-          <h3 className="text-xs font-bold text-foreground mb-3">Top Murid (Total Ayah)</h3>
+          <h3 className="text-xs font-bold text-foreground mb-3">Top Murid (Total Baris)</h3>
           <ResponsiveContainer width="100%" height={150}>
             <BarChart data={studentProgress} layout="vertical">
               <XAxis type="number" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
               <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={60} />
-              <Bar dataKey="ayah" fill="hsl(199,89%,48%)" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="baris" fill="hsl(199,89%,48%)" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Exam Pie */}
         {examStats.length > 0 && (
           <div className="bg-card rounded-xl p-4 border border-border">
             <h3 className="text-xs font-bold text-foreground mb-3">Status Ujian</h3>
@@ -92,15 +89,14 @@ const Analytics = () => {
           </div>
         )}
 
-        {/* Summary */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-card rounded-xl p-4 border border-border text-center">
             <p className="text-2xl font-bold text-foreground">{dailyLogs.length}</p>
             <p className="text-xs text-muted-foreground">Total Catatan</p>
           </div>
           <div className="bg-card rounded-xl p-4 border border-border text-center">
-            <p className="text-2xl font-bold text-foreground">{dailyLogs.reduce((s, l) => s + l.total_ayah, 0)}</p>
-            <p className="text-xs text-muted-foreground">Total Ayah</p>
+            <p className="text-2xl font-bold text-foreground">{dailyLogs.reduce((s, l) => s + l.total_lines, 0)}</p>
+            <p className="text-xs text-muted-foreground">Total Baris</p>
           </div>
         </div>
       </div>

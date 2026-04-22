@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, RefreshCw, ClipboardCheck, Users, Clock, TrendingUp } from 'lucide-react';
@@ -8,13 +9,15 @@ import { id } from 'date-fns/locale';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { students, getTodayLogs, exams } = useAppStore();
-  const todayLogs = getTodayLogs();
+  const { students, getTodayLogs, exams, fetchAll, loading } = useAppStore();
 
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const todayLogs = getTodayLogs();
   const hafalanToday = todayLogs.filter((l) => l.category === 'hafalan_baru').length;
   const murojaahToday = todayLogs.filter((l) => l.category === 'murojaah').length;
   const pendingExams = exams.filter((e) => e.status === 'pending').length;
-  const totalAyahToday = todayLogs.reduce((s, l) => s + l.total_ayah, 0);
+  const totalLinesToday = todayLogs.reduce((s, l) => s + l.total_lines, 0);
 
   const quickActions = [
     { label: 'Hafalan', icon: BookOpen, path: '/add/hafalan', variant: 'hafalan' as const },
@@ -24,7 +27,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <div className="bg-primary px-4 pt-6 pb-8 rounded-b-3xl">
         <div className="flex items-center justify-between mb-1">
           <div>
@@ -49,26 +51,22 @@ const Dashboard = () => {
               <p className="text-[10px] text-primary-foreground/70">Murojaah</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-primary-foreground">{totalAyahToday}</p>
-              <p className="text-[10px] text-primary-foreground/70">Ayah</p>
+              <p className="text-2xl font-bold text-primary-foreground">{totalLinesToday}</p>
+              <p className="text-[10px] text-primary-foreground/70">Baris</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="px-4 -mt-4 space-y-4">
-        {/* Quick Actions */}
         <div className="grid grid-cols-3 gap-3">
           {quickActions.map((a) => (
-            <button
-              key={a.label}
-              onClick={() => navigate(a.path)}
+            <button key={a.label} onClick={() => navigate(a.path)}
               className={`rounded-xl p-3 flex flex-col items-center gap-2 transition-transform active:scale-95 ${
                 a.variant === 'hafalan' ? 'bg-card border border-hafalan/20' :
                 a.variant === 'murojaah' ? 'bg-card border border-murojaah/20' :
                 'bg-card border border-ujian/20'
-              }`}
-            >
+              }`}>
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                 a.variant === 'hafalan' ? 'bg-hafalan text-primary-foreground' :
                 a.variant === 'murojaah' ? 'bg-murojaah text-primary-foreground' :
@@ -81,13 +79,11 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
-          <StatCard label="Total Murid" value={students.length} icon={<Users className="w-5 h-5" />} />
+          <StatCard label="Total Murid" value={loading ? '...' : students.length} icon={<Users className="w-5 h-5" />} />
           <StatCard label="Ujian Pending" value={pendingExams} icon={<Clock className="w-5 h-5" />} variant="ujian" />
         </div>
 
-        {/* Recent Logs */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-foreground">Aktivitas Terbaru</h2>
@@ -102,7 +98,7 @@ const Dashboard = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{student?.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Juz {log.juz_id} · Ayah {log.from_ayah}-{log.to_ayah} · {log.total_ayah} ayah
+                      Juz {log.juz_id} · Hal {log.from_page}:{log.from_line}–{log.to_page}:{log.to_line} · {log.total_lines} baris
                     </p>
                   </div>
                   <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
