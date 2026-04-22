@@ -63,8 +63,8 @@ export async function fetchTargets(studentId?: string): Promise<TargetHafalan[]>
   return data || [];
 }
 
-export async function insertTarget(target: Omit<TargetHafalan, 'id' | 'created_at'>): Promise<TargetHafalan> {
-  const { data, error } = await supabase.from('target_hafalan').insert([target]).select().single();
+export async function insertTarget(target: Omit<TargetHafalan, 'id' | 'created_at' | 'current_value'>): Promise<TargetHafalan> {
+  const { data, error } = await supabase.from('target_hafalan').insert([target as any]).select().single();
   if (error) throw error;
   return data;
 }
