@@ -1,4 +1,4 @@
-import type { DailyLog, ExamSession, Student } from '@/types';
+import type { DailyLog, ExamSession, Student, TargetHafalan, StudentProgress } from '@/types';
 import { linesToPages, pagesToJuz } from './juz-mapping';
 
 // ─── Time helpers ────────────────────────────────────────────
@@ -438,5 +438,83 @@ export function calcClassSummary(students: Student[], logs: DailyLog[], exams: E
     activeStudents: active,
     decliningStudents: declining,
     alertCount: alerts.length,
+  };
+}
+
+// ─── Target metrics ──────────────────────────────────────────
+export interface TargetMetrics {
+  id: string;
+  targetType: TargetHafalan['target_type'];
+  targetValue: number;
+  currentValue: number;
+  progressPct: number;
+  deadline: string;
+  status: 'completed' | 'on-track' | 'late';
+}
+
+export function calcTargetMetrics(
+  targets: TargetHafalan[],
+  progress: StudentProgress,
+): TargetMetrics[] {
+  return targets.map((t) => {
+    const currentValue = t.current_value ?? (
+      t.target_type === 'juz' ? progress.total_juz
+        : t.target_type === 'page' ? progress.total_pages
+        : progress.total_lines
+    );
+    const progressPct = Math.min(100, Math.round((currentValue / t.target_value) * 100));
+    const deadline = new Date(t.deadline);
+    const isLate = deadline < new Date() && progressPct < 100;
+    const status: TargetMetrics['status'] = progressPct >= 100 ? 'completed' : isLate ? 'late' : 'on-track';
+    return { id: t.id, targetType: t.target_type, targetValue: t.target_value, currentValue, progressPct, deadline: t.deadline, status };
+  });
+}
+
+// ─── Prep efficiency ─────────────────────────────────────────
+export interface PrepEfficiency {
+  linesPerDay: number;
+  minPrepDays: number;
+  maxPrepDays: number;
+}
+
+export function calcPrepEfficiency(
+  logs: DailyLog[],
+  exams: ExamSession[],
+  studentId?: string,
+): PrepEfficiency {
+  const studentExams = studentId ? exams.filter((e) => e.student_id === studentId) : exams;
+  const prepLogs = filterLogs(logs, { studentId, type: 'persiapan_ujian' });
+
+  const prepDaysPerExam: number[] = [];
+  let totalExamLines = 0;
+
+  for (const exam of studentExams) {
+    const examDate = new Date(exam.exam_date);
+    const cutoff = new Date(examDate);
+    cutoff.setDate(cutoff.getDate() - 14);
+    const days = new Set(
+      prepLogs
+        .filter((l) => {
+          const d = new Date(l.date);
+          return d >= cutoff && d <= examDate;
+        })
+        .map((l) => l.date),
+    ).size;
+    if (days > 0) {
+      prepDaysPerExam.push(days);
+      totalExamLines += prepLogs
+        .filter((l) => {
+          const d = new Date(l.date);
+          return d >= cutoff && d <= examDate;
+        })
+        .reduce((s, l) => s + l.total_lines, 0);
+    }
+  }
+
+  const totalPrepDays = prepDaysPerExam.reduce((a, b) => a + b, 0);
+  return {
+    linesPerDay: totalPrepDays > 0 ? Math.round(totalExamLines / totalPrepDays) : 0,
+    minPrepDays: prepDaysPerExam.length > 0 ? Math.min(...prepDaysPerExam) : 0,
+    maxPrepDays: prepDaysPerExam.length > 0 ? Math.max(...prepDaysPerExam) : 0,
   };
 }

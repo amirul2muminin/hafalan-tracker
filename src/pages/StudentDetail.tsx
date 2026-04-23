@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import EmptyState from '@/components/EmptyState';
-import { BookOpen, RefreshCw, ClipboardCheck, Target, Plus, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { BookOpen, RefreshCw, ClipboardCheck, Target, Plus, CheckCircle2, XCircle, Clock, BarChart3, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -45,7 +45,14 @@ const StudentDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <PageHeader title={student.name} subtitle={`${progress.total_lines} baris · ${progress.total_pages} hal · ${progress.total_juz} juz`} back />
+      <PageHeader title={student.name} subtitle={`${progress.total_lines} baris · ${progress.total_pages} hal · ${progress.total_juz} juz`} back
+        action={
+          <button onClick={() => navigate(`/students/${student.id}/analytics`)}
+            className="p-2 rounded-lg hover:bg-muted transition-colors">
+            <BarChart3 className="w-5 h-5 text-primary" />
+          </button>
+        }
+      />
 
       <div className="px-4 pt-3 pb-2">
         <div className="bg-card rounded-xl p-4 border border-border">
@@ -79,6 +86,15 @@ const StudentDetail = () => {
       <div className="px-4 pt-3 space-y-2">
         {activeTab === 'hafalan' && (
           <>
+            <button onClick={() => navigate(`/students/${student.id}/analytics`)}
+              className="w-full bg-primary/5 rounded-xl p-3 border border-primary/20 flex items-center gap-3 mb-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              <div className="text-left flex-1">
+                <p className="text-xs font-semibold text-foreground">Lihat Analitik</p>
+                <p className="text-[10px] text-muted-foreground">Statistik & tren hafalan</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </button>
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs text-muted-foreground">{hafalanLogs.length} catatan</span>
               <Button size="sm" onClick={() => navigate(`/add/hafalan?student=${student.id}`)}>

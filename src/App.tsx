@@ -12,6 +12,7 @@ import AddMurojaah from "./pages/AddMurojaah";
 import AddExam from "./pages/AddExam";
 import AddTarget from "./pages/AddTarget";
 import Analytics from "./pages/Analytics";
+import StudentAnalytics from "./pages/StudentAnalytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/" element={<Dashboard />} />
           <Route path="/students" element={<StudentList />} />
           <Route path="/students/:studentId" element={<StudentDetail />} />
+          <Route path="/students/:studentId/analytics" element={<StudentAnalytics />} />
           <Route path="/add" element={<AddMenu />} />
           <Route path="/add/hafalan" element={<AddHafalan />} />
           <Route path="/add/murojaah" element={<AddMurojaah />} />
