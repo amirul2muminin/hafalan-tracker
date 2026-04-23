@@ -125,11 +125,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const current = cycles[studentId] || { student_id: studentId, current_day: 0, current_pages: 0 };
     const currentIdx = PAGES_SEQUENCE.indexOf(current.current_pages);
     const nextIdx = currentIdx >= PAGES_SEQUENCE.length - 1 ? 0 : currentIdx + 1;
-    const updated: Omit<MurojaahCycle, 'id'> = {
+    const updated: Omit<MurojaahCycle, 'id' | 'created_at' | 'updated_at'> = {
       student_id: studentId,
       current_day: current.current_day + 1,
       current_pages: PAGES_SEQUENCE[nextIdx],
-      last_completed_date: new Date().toISOString().split('T')[0],
     };
     const result = await api.upsertMurojaahCycle(updated);
     set({ murojaahCycles: { ...cycles, [studentId]: result } });
@@ -150,6 +149,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   getTodayLogs: () => {
     const today = new Date().toISOString().split('T')[0];
-    return get().dailyLogs.filter((l) => l.date === today);
+    return get().dailyLogs.filter((l) => l.created_at.startsWith(today));
   },
 }));

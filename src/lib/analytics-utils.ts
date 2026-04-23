@@ -30,7 +30,7 @@ function filterLogs(logs: DailyLog[], opts: { studentId?: string; category?: str
     if (opts.studentId && l.student_id !== opts.studentId) return false;
     if (opts.category && l.category !== opts.category) return false;
     if (opts.type && l.type !== opts.type) return false;
-    if (opts.start && opts.end && !inRange(l.date, opts.start, opts.end)) return false;
+    if (opts.start && opts.end && !inRange(l.created_at, opts.start, opts.end)) return false;
     return true;
   });
 }
@@ -40,7 +40,7 @@ function sumLines(logs: DailyLog[]) {
 }
 
 function uniqueDays(logs: DailyLog[]) {
-  return new Set(logs.map(l => l.date)).size;
+  return new Set(logs.map(l => l.created_at.split('T')[0])).size;
 }
 
 // ─── Trend calculation ───────────────────────────────────────
@@ -70,7 +70,7 @@ function weeklyLines(logs: DailyLog[], weeks: number, category?: string): number
 
 // ─── Streak calculation ──────────────────────────────────────
 function calcStreak(logs: DailyLog[]): { current: number; longest: number } {
-  const dates = [...new Set(logs.map(l => l.date))].sort();
+  const dates = [...new Set(logs.map(l => l.created_at.split('T')[0]))].sort();
   if (!dates.length) return { current: 0, longest: 0 };
 
   let longest = 1, current = 1;
@@ -143,7 +143,7 @@ export function calcHafalanMetrics(logs: DailyLog[], studentId?: string): Hafala
 
   const bestWeekLines = Math.max(...wt, 0);
 
-  const daysSinceFirst = all.length ? Math.max(1, Math.ceil((Date.now() - new Date(all[all.length - 1].date).getTime()) / 86400000)) : 1;
+  const daysSinceFirst = all.length ? Math.max(1, Math.ceil((Date.now() - new Date(all[all.length - 1].created_at).getTime()) / 86400000)) : 1;
   const linesPerDay = Math.round(totalLines / daysSinceFirst);
 
   return {
@@ -211,7 +211,7 @@ export function calcExamMetrics(logs: DailyLog[], exams: ExamSession[], studentI
 
   // Group prep logs by approximate exam (within 14 days before exam)
   for (const exam of studentExams) {
-    const examDate = new Date(exam.exam_date);
+    const examDate = new Date(exam.created_at);
     const twoWeeksBefore = new Date(examDate); twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
     const days = uniqueDays(filterLogs(prepLogs, { start: twoWeeksBefore, end: examDate }));
     if (days > 0) prepDaysPerExam.push(days);
@@ -270,7 +270,7 @@ export function generateAlerts(students: Student[], logs: DailyLog[], exams: Exa
 
     // Hafalan: no setoran > 3 days
     if (hafalanLogs.length > 0) {
-      const lastDate = new Date(Math.max(...hafalanLogs.map(l => new Date(l.date).getTime())));
+      const lastDate = new Date(Math.max(...hafalanLogs.map(l => new Date(l.created_at).getTime())));
       const daysSince = Math.floor((today.getTime() - lastDate.getTime()) / 86400000);
       if (daysSince > 3) {
         alerts.push({
@@ -308,7 +308,7 @@ export function generateAlerts(students: Student[], logs: DailyLog[], exams: Exa
 
     // Murojaah: jarang
     if (murojaahLogs.length > 0) {
-      const lastMuro = new Date(Math.max(...murojaahLogs.map(l => new Date(l.date).getTime())));
+      const lastMuro = new Date(Math.max(...murojaahLogs.map(l => new Date(l.created_at).getTime())));
       const daysSince = Math.floor((today.getTime() - lastMuro.getTime()) / 86400000);
       if (daysSince > 5) {
         alerts.push({
@@ -322,7 +322,7 @@ export function generateAlerts(students: Student[], logs: DailyLog[], exams: Exa
     // Exam: prep > 5 days
     const sExams = exams.filter(e => e.student_id === student.id);
     for (const exam of sExams.filter(e => e.status === 'pending')) {
-      const examDate = new Date(exam.exam_date);
+      const examDate = new Date(exam.created_at);
       const prepStart = new Date(examDate); prepStart.setDate(prepStart.getDate() - 14);
       const prepDays = uniqueDays(filterLogs(sLogs.filter(l => l.type === 'persiapan_ujian'), { start: prepStart, end: examDate }));
       if (prepDays > 5) {
@@ -379,7 +379,7 @@ export function getLast7DaysChart(logs: DailyLog[]) {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
     const dateStr = d.toISOString().split('T')[0];
-    const dayLogs = logs.filter(l => l.date === dateStr);
+    const dayLogs = logs.filter(l => l.created_at.startsWith(dateStr));
     return {
       day: d.toLocaleDateString('id', { weekday: 'short' }),
       hafalan: dayLogs.filter(l => l.category === 'hafalan_baru').reduce((s, l) => s + l.total_lines, 0),
@@ -393,7 +393,7 @@ export function getWeeklyChart(logs: DailyLog[]) {
   return Array.from({ length: 8 }, (_, i) => {
     const end = new Date(); end.setDate(end.getDate() - (7 - i) * 7);
     const start = new Date(end); start.setDate(start.getDate() - 6);
-    const weekLogs = logs.filter(l => inRange(l.date, start, end));
+    const weekLogs = logs.filter(l => inRange(l.created_at, start, end));
     return {
       week: `M${8 - (7 - i)}`,
       hafalan: weekLogs.filter(l => l.category === 'hafalan_baru').reduce((s, l) => s + l.total_lines, 0),
@@ -489,22 +489,22 @@ export function calcPrepEfficiency(
   let totalExamLines = 0;
 
   for (const exam of studentExams) {
-    const examDate = new Date(exam.exam_date);
+    const examDate = new Date(exam.created_at);
     const cutoff = new Date(examDate);
     cutoff.setDate(cutoff.getDate() - 14);
     const days = new Set(
       prepLogs
         .filter((l) => {
-          const d = new Date(l.date);
+          const d = new Date(l.created_at);
           return d >= cutoff && d <= examDate;
         })
-        .map((l) => l.date),
+        .map((l) => l.created_at.split('T')[0]),
     ).size;
     if (days > 0) {
       prepDaysPerExam.push(days);
       totalExamLines += prepLogs
         .filter((l) => {
-          const d = new Date(l.date);
+          const d = new Date(l.created_at);
           return d >= cutoff && d <= examDate;
         })
         .reduce((s, l) => s + l.total_lines, 0);

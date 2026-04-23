@@ -3,6 +3,7 @@ export interface Student {
   name: string;
   role?: 'student' | 'teacher' | 'examiner';
   created_at?: string;
+  updated_at?: string;
 }
 
 export type LogCategory = 'hafalan_baru' | 'murojaah';
@@ -11,7 +12,6 @@ export type LogType = 'setoran' | 'persiapan_ujian' | 'ujian';
 export interface DailyLog {
   id: string;
   student_id: string;
-  date: string;
   category: LogCategory;
   type: LogType;
   juz_id: number;
@@ -22,7 +22,8 @@ export interface DailyLog {
   total_lines: number;
   pages: number;
   note: string;
-  created_at?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export type ExamType = 'quarter_juz' | 'half_juz' | 'one_juz' | 'five_juz';
@@ -33,10 +34,10 @@ export interface ExamSession {
   student_id: string;
   exam_type: ExamType;
   status: ExamStatus;
-  exam_date: string;
   juz_start?: number;
   juz_end?: number;
-  created_at?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export type TargetType = 'juz' | 'page' | 'line';
@@ -48,7 +49,8 @@ export interface TargetHafalan {
   target_value: number;
   deadline: string;
   current_value?: number;
-  created_at?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface MurojaahCycle {
@@ -56,7 +58,8 @@ export interface MurojaahCycle {
   student_id: string;
   current_day: number;
   current_pages: number;
-  last_completed_date?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface StudentProgress {

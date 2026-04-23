@@ -18,7 +18,6 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["log_category"]
           created_at: string
-          date: string
           from_line: number
           from_page: number
           id: string
@@ -30,11 +29,11 @@ export type Database = {
           to_page: number
           total_lines: number
           type: Database["public"]["Enums"]["log_type"]
+          updated_at: string
         }
         Insert: {
           category: Database["public"]["Enums"]["log_category"]
           created_at?: string
-          date?: string
           from_line: number
           from_page: number
           id?: string
@@ -46,11 +45,11 @@ export type Database = {
           to_page: number
           total_lines: number
           type: Database["public"]["Enums"]["log_type"]
+          updated_at?: string
         }
         Update: {
           category?: Database["public"]["Enums"]["log_category"]
           created_at?: string
-          date?: string
           from_line?: number
           from_page?: number
           id?: string
@@ -62,6 +61,7 @@ export type Database = {
           to_page?: number
           total_lines?: number
           type?: Database["public"]["Enums"]["log_type"]
+          updated_at?: string
         }
         Relationships: [
           {
@@ -76,33 +76,33 @@ export type Database = {
       exam_sessions: {
         Row: {
           created_at: string
-          exam_date: string
           exam_type: Database["public"]["Enums"]["exam_type"]
           id: string
           juz_end: number | null
           juz_start: number | null
           status: Database["public"]["Enums"]["exam_status"]
           student_id: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
-          exam_date?: string
           exam_type: Database["public"]["Enums"]["exam_type"]
           id?: string
           juz_end?: number | null
           juz_start?: number | null
           status?: Database["public"]["Enums"]["exam_status"]
           student_id: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
-          exam_date?: string
           exam_type?: Database["public"]["Enums"]["exam_type"]
           id?: string
           juz_end?: number | null
           juz_start?: number | null
           status?: Database["public"]["Enums"]["exam_status"]
           student_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -120,24 +120,24 @@ export type Database = {
           current_day: number
           current_pages: number
           id: string
-          last_completed_date: string | null
           student_id: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
           current_day?: number
           current_pages?: number
           id?: string
-          last_completed_date?: string | null
           student_id: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
           current_day?: number
           current_pages?: number
           id?: string
-          last_completed_date?: string | null
           student_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -202,18 +202,21 @@ export type Database = {
           id: string
           name: string
           role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
           role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
           role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -225,6 +228,7 @@ export type Database = {
           student_id: string
           target_type: Database["public"]["Enums"]["target_type"]
           target_value: number
+          updated_at: string
         }
         Insert: {
           created_at?: string
@@ -233,6 +237,7 @@ export type Database = {
           student_id: string
           target_type: Database["public"]["Enums"]["target_type"]
           target_value: number
+          updated_at?: string
         }
         Update: {
           created_at?: string
@@ -241,6 +246,7 @@ export type Database = {
           student_id?: string
           target_type?: Database["public"]["Enums"]["target_type"]
           target_value?: number
+          updated_at?: string
         }
         Relationships: [
           {

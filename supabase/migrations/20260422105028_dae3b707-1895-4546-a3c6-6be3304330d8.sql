@@ -1,4 +1,16 @@
 
+-- Create extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create functions
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Create enums
 CREATE TYPE public.user_role AS ENUM ('student', 'teacher', 'examiner');
 CREATE TYPE public.log_category AS ENUM ('hafalan_baru', 'murojaah');
@@ -12,7 +24,8 @@ CREATE TABLE public.students (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name VARCHAR NOT NULL,
   role user_role NOT NULL DEFAULT 'student',
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 -- Student progress
@@ -34,7 +47,6 @@ CREATE TABLE public.student_progress (
 CREATE TABLE public.daily_logs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
-  date DATE NOT NULL DEFAULT CURRENT_DATE,
   category log_category NOT NULL,
   type log_type NOT NULL,
   juz_id INT NOT NULL,
@@ -45,7 +57,8 @@ CREATE TABLE public.daily_logs (
   total_lines INT NOT NULL,
   pages DECIMAL NOT NULL DEFAULT 0,
   note TEXT DEFAULT '',
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 -- Exam sessions
@@ -56,8 +69,8 @@ CREATE TABLE public.exam_sessions (
   juz_start INT,
   juz_end INT,
   status exam_status NOT NULL DEFAULT 'pending',
-  exam_date DATE NOT NULL DEFAULT CURRENT_DATE,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 -- Murojaah cycles
@@ -66,8 +79,8 @@ CREATE TABLE public.murojaah_cycles (
   student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
   current_day INT NOT NULL DEFAULT 0,
   current_pages INT NOT NULL DEFAULT 3,
-  last_completed_date DATE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   UNIQUE(student_id)
 );
 
@@ -78,8 +91,17 @@ CREATE TABLE public.target_hafalan (
   target_type target_type NOT NULL,
   target_value INT NOT NULL,
   deadline DATE NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+-- Create triggers for updated_at
+CREATE TRIGGER set_updated_at_students BEFORE UPDATE ON public.students FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_student_progress BEFORE UPDATE ON public.student_progress FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_daily_logs BEFORE UPDATE ON public.daily_logs FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_exam_sessions BEFORE UPDATE ON public.exam_sessions FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_murojaah_cycles BEFORE UPDATE ON public.murojaah_cycles FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_target_hafalan BEFORE UPDATE ON public.target_hafalan FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- Enable RLS on all tables
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;

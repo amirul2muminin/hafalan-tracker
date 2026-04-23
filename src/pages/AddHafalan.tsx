@@ -50,7 +50,6 @@ const AddHafalan = () => {
     try {
       await addLog({
         student_id: form.student_id,
-        date: new Date().toISOString().split('T')[0],
         category: 'hafalan_baru',
         type: form.type,
         juz_id: form.juz_id,

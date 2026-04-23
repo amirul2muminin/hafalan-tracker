@@ -42,7 +42,6 @@ const AddMurojaah = () => {
       const updatedCycle = await updateMurojaahCycle(form.student_id);
       await addLog({
         student_id: form.student_id,
-        date: new Date().toISOString().split('T')[0],
         category: 'murojaah',
         type: 'setoran',
         juz_id: form.juz_id,

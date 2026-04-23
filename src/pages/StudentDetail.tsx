@@ -106,7 +106,7 @@ const StudentDetail = () => {
               <div key={log.id} className="bg-card rounded-xl p-3 border border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold category-hafalan px-2 py-0.5 rounded-full">{log.type}</span>
-                  <span className="text-[10px] text-muted-foreground">{format(new Date(log.date), 'd MMM', { locale: idLocale })}</span>
+                  <span className="text-[10px] text-muted-foreground">{format(new Date(log.created_at), 'd MMM', { locale: idLocale })}</span>
                 </div>
                 <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id} · Hal {log.from_page}:{log.from_line}–{log.to_page}:{log.to_line}</p>
                 <p className="text-xs text-muted-foreground">{log.total_lines} baris · {log.pages} halaman</p>
@@ -136,7 +136,7 @@ const StudentDetail = () => {
               <div key={log.id} className="bg-card rounded-xl p-3 border border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold category-murojaah px-2 py-0.5 rounded-full">{log.pages} hal</span>
-                  <span className="text-[10px] text-muted-foreground">{format(new Date(log.date), 'd MMM', { locale: idLocale })}</span>
+                  <span className="text-[10px] text-muted-foreground">{format(new Date(log.created_at), 'd MMM', { locale: idLocale })}</span>
                 </div>
                 <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id} · Hal {log.from_page}:{log.from_line}–{log.to_page}:{log.to_line}</p>
                 {log.note && <p className="text-xs text-muted-foreground mt-1 italic">"{log.note}"</p>}
@@ -173,7 +173,7 @@ const StudentDetail = () => {
                   </span>
                 </div>
                 <p className="text-sm font-semibold text-foreground mt-1">Juz {exam.juz_start}{exam.juz_end && exam.juz_end !== exam.juz_start ? `–${exam.juz_end}` : ''}</p>
-                <p className="text-xs text-muted-foreground">{format(new Date(exam.exam_date), 'd MMM yyyy', { locale: idLocale })}</p>
+                <p className="text-xs text-muted-foreground">{format(new Date(exam.created_at), 'd MMM yyyy', { locale: idLocale })}</p>
                 {exam.status === 'pending' && (
                   <div className="flex gap-2 mt-2">
                     <button onClick={() => updateExamStatus(exam.id, 'passed')} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-success/10 text-success">Lulus</button>

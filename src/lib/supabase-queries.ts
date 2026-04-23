@@ -21,7 +21,7 @@ export async function deleteStudent(id: string): Promise<void> {
 
 // Daily Logs
 export async function fetchDailyLogs(studentId?: string): Promise<DailyLog[]> {
-  let query = supabase.from('daily_logs').select('*').order('date', { ascending: false });
+  let query = supabase.from('daily_logs').select('*').order('created_at', { ascending: false });
   if (studentId) query = query.eq('student_id', studentId);
   const { data, error } = await query;
   if (error) throw error;
@@ -36,7 +36,7 @@ export async function insertDailyLog(log: Omit<DailyLog, 'id' | 'created_at'>): 
 
 // Exam Sessions
 export async function fetchExams(studentId?: string): Promise<ExamSession[]> {
-  let query = supabase.from('exam_sessions').select('*').order('exam_date', { ascending: false });
+  let query = supabase.from('exam_sessions').select('*').order('created_at', { ascending: false });
   if (studentId) query = query.eq('student_id', studentId);
   const { data, error } = await query;
   if (error) throw error;
