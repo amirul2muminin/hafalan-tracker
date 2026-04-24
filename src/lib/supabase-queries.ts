@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Student, HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, TargetHafalan, MurojaahCycle } from '@/types';
+import type { Student, HafalanBaruLog, MurojaahLog, PersiapanUjianLog, UjianLog } from '@/types';
 
 // Students
 export async function fetchStudents(): Promise<Student[]> {
@@ -33,6 +33,7 @@ export async function insertHafalanBaruLog(log: Omit<HafalanBaruLog, 'id' | 'cre
   if (error) throw error;
   return data;
 }
+
 
 // Persiapan Ujian Logs
 export async function fetchPersiapanUjianLogs(studentId?: string): Promise<PersiapanUjianLog[]> {
@@ -79,33 +80,3 @@ export async function insertMurojaahLog(log: Omit<MurojaahLog, 'id' | 'created_a
   return data;
 }
 
-// Target Hafalan
-export async function fetchTargets(studentId?: string): Promise<TargetHafalan[]> {
-  let query = supabase.from('target_hafalan').select('*').order('deadline');
-  if (studentId) query = query.eq('student_id', studentId);
-  const { data, error } = await query;
-  if (error) throw error;
-  return data || [];
-}
-
-export async function insertTarget(target: Omit<TargetHafalan, 'id' | 'created_at' | 'current_value'>): Promise<TargetHafalan> {
-  const { data, error } = await supabase.from('target_hafalan').insert([target as any]).select().single();
-  if (error) throw error;
-  return data;
-}
-
-// Murojaah Cycles
-export async function fetchMurojaahCycle(studentId: string): Promise<MurojaahCycle | null> {
-  const { data, error } = await supabase.from('murojaah_cycles').select('*').eq('student_id', studentId).maybeSingle();
-  if (error) throw error;
-  return data;
-}
-
-export async function upsertMurojaahCycle(cycle: Omit<MurojaahCycle, 'id'>): Promise<MurojaahCycle> {
-  const { data, error } = await supabase.from('murojaah_cycles')
-    .upsert(cycle as any, { onConflict: 'student_id' })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}

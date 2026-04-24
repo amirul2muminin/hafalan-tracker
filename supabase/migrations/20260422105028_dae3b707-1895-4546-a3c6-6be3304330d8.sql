@@ -20,7 +20,6 @@ $$ LANGUAGE plpgsql;
 CREATE TYPE public.user_role AS ENUM ('student', 'teacher', 'examiner');
 CREATE TYPE public.exam_type AS ENUM ('quarter_juz', 'half_juz', 'one_juz', 'five_juz');
 CREATE TYPE public.exam_result AS ENUM ('mumtaz', 'jayyid_jiddan_plus', 'jayyid_jiddan', 'jayyid_plus', 'jayyid', 'maqbul', 'rosib');
-CREATE TYPE public.target_type AS ENUM ('juz', 'page', 'line');
 
 -- Students table
 CREATE TABLE public.students (
@@ -98,27 +97,6 @@ CREATE TABLE public.murojaah_logs (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- Murojaah cycles
-CREATE TABLE public.murojaah_cycles (
-  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
-  current_day INT NOT NULL DEFAULT 0,
-  current_pages INT NOT NULL DEFAULT 3,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  UNIQUE(student_id)
-);
-
--- Target hafalan
-CREATE TABLE public.target_hafalan (
-  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
-  target_type target_type NOT NULL,
-  target_value INT NOT NULL,
-  deadline DATE NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
 
 -- Create triggers for updated_at
 CREATE TRIGGER set_updated_at_students BEFORE UPDATE ON public.students FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -127,8 +105,6 @@ CREATE TRIGGER set_updated_at_hafalan_baru_logs BEFORE UPDATE ON public.hafalan_
 CREATE TRIGGER set_updated_at_persiapan_ujian_logs BEFORE UPDATE ON public.persiapan_ujian_logs FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_updated_at_ujian_logs BEFORE UPDATE ON public.ujian_logs FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_updated_at_murojaah_logs BEFORE UPDATE ON public.murojaah_logs FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER set_updated_at_murojaah_cycles BEFORE UPDATE ON public.murojaah_cycles FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER set_updated_at_target_hafalan BEFORE UPDATE ON public.target_hafalan FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- Enable RLS on all tables
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
@@ -137,8 +113,6 @@ ALTER TABLE public.hafalan_baru_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.persiapan_ujian_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ujian_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.murojaah_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.murojaah_cycles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.target_hafalan ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read/write for now (no auth required for teacher app)
 CREATE POLICY "Allow all access to students" ON public.students FOR ALL USING (true) WITH CHECK (true);
@@ -147,8 +121,6 @@ CREATE POLICY "Allow all access to hafalan_baru_logs" ON public.hafalan_baru_log
 CREATE POLICY "Allow all access to persiapan_ujian_logs" ON public.persiapan_ujian_logs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to ujian_logs" ON public.ujian_logs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to murojaah_logs" ON public.murojaah_logs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all access to murojaah_cycles" ON public.murojaah_cycles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all access to target_hafalan" ON public.target_hafalan FOR ALL USING (true) WITH CHECK (true);
 
 -- Seed sample students
 INSERT INTO public.students (id, name) VALUES 

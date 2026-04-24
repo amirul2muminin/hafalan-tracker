@@ -1,13 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, RefreshCw, ClipboardCheck, Target } from 'lucide-react';
+import { BookOpen, RefreshCw } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 
 const actions = [
   { label: 'Hafalan Baru', desc: 'Catat setoran hafalan baru', icon: BookOpen, path: '/add/hafalan', color: 'bg-hafalan text-primary-foreground' },
   { label: 'Murojaah', desc: 'Catat muraja\'ah harian', icon: RefreshCw, path: '/add/murojaah', color: 'bg-murojaah text-primary-foreground' },
-  { label: 'Ujian', desc: 'Jadwalkan atau catat ujian', icon: ClipboardCheck, path: '/add/exam', color: 'bg-ujian text-primary-foreground' },
-  { label: 'Target', desc: 'Tetapkan target hafalan murid', icon: Target, path: '/add/target', color: 'bg-primary text-primary-foreground' },
 ];
 
 const AddMenu = () => {
