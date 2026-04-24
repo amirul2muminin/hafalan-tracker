@@ -8,8 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieCha
 import {
   calcHafalanMetrics, calcMurojaahMetrics, calcExamMetrics,
   calcBalance, getLast7DaysChart, getWeeklyChart,
-  calcTargetMetrics, calcPrepEfficiency,
-  type Alert, type BalanceStatus,
+  calcTargetMetrics,
 } from '@/lib/analytics-utils';
 import { TrendIcon, GrowthBadge, MetricCard, PrepBenchmarkBadge, BalanceBadge } from '@/components/analytics/shared';
 import { Flame, Target, BookOpen, RefreshCw, GraduationCap, BarChart3 } from 'lucide-react';
@@ -19,7 +18,7 @@ const COLORS = ['hsl(213,94%,56%)', 'hsl(152,69%,41%)', 'hsl(25,95%,53%)', 'hsl(
 
 const StudentAnalytics = () => {
   const { studentId } = useParams();
-  const { students, getStudentLogs, getStudentExams, getStudentTargets, getStudentProgress, fetchStudentData } = useAppStore();
+  const { students, getStudentHafalanLogs, getStudentMurojaahLogs, getStudentPersiapanLogs, getStudentUjianLogs, getStudentTargets, getStudentProgress, fetchStudentData } = useAppStore();
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -29,27 +28,28 @@ const StudentAnalytics = () => {
   const student = students.find((s) => s.id === studentId);
   if (!student) return <div className="p-4">Murid tidak ditemukan</div>;
 
-  const logs = getStudentLogs(student.id);
-  const exams = getStudentExams(student.id);
+  const hLogs = getStudentHafalanLogs(student.id);
+  const mLogs = getStudentMurojaahLogs(student.id);
+  const pLogs = getStudentPersiapanLogs(student.id);
+  const uLogs = getStudentUjianLogs(student.id);
   const targets = getStudentTargets(student.id);
   const progress = getStudentProgress(student.id);
 
-  const hafalan = useMemo(() => calcHafalanMetrics(logs, student.id), [logs, student.id]);
-  const murojaah = useMemo(() => calcMurojaahMetrics(logs, student.id), [logs, student.id]);
-  const exam = useMemo(() => calcExamMetrics(logs, exams, student.id), [logs, exams, student.id]);
-  const balance = useMemo(() => calcBalance(logs, student.id), [logs, student.id]);
+  const hafalan = useMemo(() => calcHafalanMetrics(hLogs, student.id), [hLogs, student.id]);
+  const murojaah = useMemo(() => calcMurojaahMetrics(mLogs, student.id), [mLogs, student.id]);
+  const exam = useMemo(() => calcExamMetrics(pLogs, uLogs, student.id), [pLogs, uLogs, student.id]);
+  const balance = useMemo(() => calcBalance(hLogs, mLogs, student.id), [hLogs, mLogs, student.id]);
   const targetMetrics = useMemo(() => calcTargetMetrics(targets, progress), [targets, progress]);
-  const efficiency = useMemo(() => calcPrepEfficiency(logs, exams, student.id), [logs, exams, student.id]);
-  const last7 = useMemo(() => getLast7DaysChart(logs), [logs]);
-  const weekly = useMemo(() => getWeeklyChart(logs), [logs]);
+  const last7 = useMemo(() => getLast7DaysChart(hLogs, mLogs), [hLogs, mLogs]);
+  const weekly = useMemo(() => getWeeklyChart(hLogs, mLogs), [hLogs, mLogs]);
 
   const examStats = useMemo(() => [
-    { name: 'Lulus', value: exam.passed },
-    { name: 'Pending', value: exam.pending },
+    { name: 'Mumtaz / Jayyid+', value: exam.passed },
+    { name: 'Jayyid / Maqbul', value: uLogs.filter(e => e.result === 'jayyid' || e.result === 'maqbul').length },
     { name: 'Gagal', value: exam.failed },
-  ].filter((e) => e.value > 0), [exam]);
+  ].filter((e) => e.value > 0), [exam, uLogs]);
 
-  const hasData = logs.length > 0;
+  const hasData = hLogs.length > 0 || mLogs.length > 0 || uLogs.length > 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -327,26 +327,6 @@ const StudentAnalytics = () => {
                 <p>&gt;7 hari: <span className="text-destructive font-medium">Kritis</span></p>
               </div>
             </div>
-
-            {efficiency.linesPerDay > 0 && (
-              <div className="bg-card rounded-xl p-4 border border-border">
-                <h3 className="text-xs font-bold text-foreground mb-3">Efisiensi Persiapan</h3>
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{efficiency.linesPerDay}</p>
-                    <p className="text-[10px] text-muted-foreground">Baris/Hari</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{efficiency.minPrepDays}</p>
-                    <p className="text-[10px] text-muted-foreground">Min Hari</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{efficiency.maxPrepDays}</p>
-                    <p className="text-[10px] text-muted-foreground">Max Hari</p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="bg-card rounded-xl p-4 border border-border flex items-center justify-between">
               <div>

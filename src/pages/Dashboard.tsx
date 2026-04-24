@@ -9,20 +9,24 @@ import { id } from 'date-fns/locale';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { students, getTodayLogs, exams, fetchAll, loading } = useAppStore();
+  const { students, hafalanBaruLogs, murojaahLogs, ujianLogs, fetchAll, loading } = useAppStore();
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const todayLogs = getTodayLogs();
-  const hafalanToday = todayLogs.filter((l) => l.category === 'hafalan_baru').length;
-  const murojaahToday = todayLogs.filter((l) => l.category === 'murojaah').length;
-  const pendingExams = exams.filter((e) => e.status === 'pending').length;
-  const totalLinesToday = todayLogs.reduce((s, l) => s + l.total_lines, 0);
+  const today = new Date().toISOString().split('T')[0];
+  const todayHafalan = hafalanBaruLogs.filter((l) => l.created_at.startsWith(today));
+  const todayMurojaah = murojaahLogs.filter((l) => l.created_at.startsWith(today));
+  
+  const hafalanToday = todayHafalan.length;
+  const murojaahToday = todayMurojaah.length;
+  // Note: pending exams are now tracked as part of persiapan_ujian_logs, or we can just count today's ujian
+  const examsToday = ujianLogs.filter((e) => e.created_at.startsWith(today)).length;
+  const totalLinesToday = todayHafalan.reduce((s, l) => s + l.total_lines, 0);
 
   const quickActions = [
-    { label: 'Hafalan', icon: BookOpen, path: '/add/hafalan', variant: 'hafalan' as const },
+    { label: 'Hafalan', icon: BookOpen, path: '/add/hafalan?type=setoran', variant: 'hafalan' as const },
     { label: 'Murojaah', icon: RefreshCw, path: '/add/murojaah', variant: 'murojaah' as const },
-    { label: 'Ujian', icon: ClipboardCheck, path: '/add/exam', variant: 'ujian' as const },
+    { label: 'Ujian', icon: ClipboardCheck, path: '/add/hafalan?type=ujian', variant: 'ujian' as const },
   ];
 
   return (
@@ -81,7 +85,7 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <StatCard label="Total Murid" value={loading ? '...' : students.length} icon={<Users className="w-5 h-5" />} />
-          <StatCard label="Ujian Pending" value={pendingExams} icon={<Clock className="w-5 h-5" />} variant="ujian" />
+          <StatCard label="Ujian Hari Ini" value={examsToday} icon={<ClipboardCheck className="w-5 h-5" />} variant="ujian" />
         </div>
 
         <div>
@@ -90,26 +94,27 @@ const Dashboard = () => {
             <button onClick={() => navigate('/students')} className="text-xs text-primary font-medium">Lihat Semua</button>
           </div>
           <div className="space-y-2">
-            {todayLogs.slice(0, 5).map((log) => {
+            {[...todayHafalan, ...todayMurojaah].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5).map((log) => {
               const student = students.find((s) => s.id === log.student_id);
+              const isHafalan = 'total_lines' in log;
               return (
                 <div key={log.id} className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
-                  <div className={`w-2 h-8 rounded-full ${log.category === 'hafalan_baru' ? 'bg-hafalan' : 'bg-murojaah'}`} />
+                  <div className={`w-2 h-8 rounded-full ${isHafalan ? 'bg-hafalan' : 'bg-murojaah'}`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{student?.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Juz {log.juz_id} · Hal {log.from_page}:{log.from_line}–{log.to_page}:{log.to_line} · {log.total_lines} baris
+                      Juz {log.juz_id} {isHafalan ? `· Hal ${log.from_page}:${log.from_line}–${log.to_page}:${log.to_line} · ${log.total_lines} baris` : `· ${(log as any).total_pages} halaman`}
                     </p>
                   </div>
                   <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
-                    log.category === 'hafalan_baru' ? 'category-hafalan' : 'category-murojaah'
+                    isHafalan ? 'category-hafalan' : 'category-murojaah'
                   }`}>
-                    {log.category === 'hafalan_baru' ? 'Hafalan' : 'Murojaah'}
+                    {isHafalan ? 'Hafalan' : 'Murojaah'}
                   </span>
                 </div>
               );
             })}
-            {todayLogs.length === 0 && (
+            {todayHafalan.length === 0 && todayMurojaah.length === 0 && (
               <div className="text-center py-8">
                 <TrendingUp className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Belum ada aktivitas hari ini</p>

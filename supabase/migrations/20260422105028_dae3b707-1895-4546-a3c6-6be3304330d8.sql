@@ -1,3 +1,8 @@
+-- flow pembelajaran murid: murid membaca dua kategori di kelas: hafalan baru dan murojaah.
+
+-- flow hafalan baru: setiap hari murid setoran hafalan baru dan di track perbaris dan halaman, jika sudah mencapai 5 halaman(1/4 juz) murid melakukan persiapan ujian dan jika sudah siap murid melakukan ujian. semua flow tersebut termasuk hafalan baru. ada 4 tipe ujian: 1/4(ke-1,2,3,4), 1/2 (ke-1, ke-2), 1 dan 5 juz
+
+-- flow murojaah: murid membaca halaman dengan jumlah kelipatan 3 incremental sampai 1 juz (20 halaman): hari pertama baca 3 halaman, ke-2 6 halaman dan seterusnya
 
 -- Create extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -13,10 +18,8 @@ $$ LANGUAGE plpgsql;
 
 -- Create enums
 CREATE TYPE public.user_role AS ENUM ('student', 'teacher', 'examiner');
-CREATE TYPE public.log_category AS ENUM ('hafalan_baru', 'murojaah');
-CREATE TYPE public.log_type AS ENUM ('setoran', 'persiapan_ujian', 'ujian');
 CREATE TYPE public.exam_type AS ENUM ('quarter_juz', 'half_juz', 'one_juz', 'five_juz');
-CREATE TYPE public.exam_status AS ENUM ('pending', 'passed', 'failed');
+CREATE TYPE public.exam_result AS ENUM ('mumtaz', 'jayyid_jiddan_plus', 'jayyid_jiddan', 'jayyid_plus', 'jayyid', 'maqbul', 'rosib');
 CREATE TYPE public.target_type AS ENUM ('juz', 'page', 'line');
 
 -- Students table
@@ -43,12 +46,10 @@ CREATE TABLE public.student_progress (
   UNIQUE(student_id)
 );
 
--- Daily logs (core table)
-CREATE TABLE public.daily_logs (
+-- Hafalan Baru logs
+CREATE TABLE public.hafalan_baru_logs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
-  category log_category NOT NULL,
-  type log_type NOT NULL,
   juz_id INT NOT NULL,
   from_page INT NOT NULL,
   from_line INT NOT NULL,
@@ -61,14 +62,38 @@ CREATE TABLE public.daily_logs (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- Exam sessions
-CREATE TABLE public.exam_sessions (
+-- Persiapan Ujian logs
+CREATE TABLE public.persiapan_ujian_logs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
+  juz_id INT NOT NULL,
   exam_type exam_type NOT NULL,
-  juz_start INT,
-  juz_end INT,
-  status exam_status NOT NULL DEFAULT 'pending',
+  juz_part INT NOT NULL,
+  note TEXT DEFAULT '',
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- Ujian logs
+CREATE TABLE public.ujian_logs (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
+  juz_id INT NOT NULL,
+  exam_type exam_type NOT NULL,
+  juz_part INT NOT NULL,
+  result exam_result NOT NULL,
+  note TEXT DEFAULT '',
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- Murojaah logs
+CREATE TABLE public.murojaah_logs (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
+  juz_id INT NOT NULL,
+  total_pages INT NOT NULL,
+  note TEXT DEFAULT '',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
@@ -98,24 +123,30 @@ CREATE TABLE public.target_hafalan (
 -- Create triggers for updated_at
 CREATE TRIGGER set_updated_at_students BEFORE UPDATE ON public.students FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_updated_at_student_progress BEFORE UPDATE ON public.student_progress FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER set_updated_at_daily_logs BEFORE UPDATE ON public.daily_logs FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER set_updated_at_exam_sessions BEFORE UPDATE ON public.exam_sessions FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_hafalan_baru_logs BEFORE UPDATE ON public.hafalan_baru_logs FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_persiapan_ujian_logs BEFORE UPDATE ON public.persiapan_ujian_logs FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_ujian_logs BEFORE UPDATE ON public.ujian_logs FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_murojaah_logs BEFORE UPDATE ON public.murojaah_logs FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_updated_at_murojaah_cycles BEFORE UPDATE ON public.murojaah_cycles FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_updated_at_target_hafalan BEFORE UPDATE ON public.target_hafalan FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- Enable RLS on all tables
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_progress ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.daily_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.exam_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hafalan_baru_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.persiapan_ujian_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ujian_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.murojaah_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.murojaah_cycles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.target_hafalan ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read/write for now (no auth required for teacher app)
 CREATE POLICY "Allow all access to students" ON public.students FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to student_progress" ON public.student_progress FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all access to daily_logs" ON public.daily_logs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all access to exam_sessions" ON public.exam_sessions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access to hafalan_baru_logs" ON public.hafalan_baru_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access to persiapan_ujian_logs" ON public.persiapan_ujian_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access to ujian_logs" ON public.ujian_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access to murojaah_logs" ON public.murojaah_logs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to murojaah_cycles" ON public.murojaah_cycles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to target_hafalan" ON public.target_hafalan FOR ALL USING (true) WITH CHECK (true);
 

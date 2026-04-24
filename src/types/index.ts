@@ -6,14 +6,12 @@ export interface Student {
   updated_at?: string;
 }
 
-export type LogCategory = 'hafalan_baru' | 'murojaah';
-export type LogType = 'setoran' | 'persiapan_ujian' | 'ujian';
+export type ExamType = 'quarter_juz' | 'half_juz' | 'one_juz' | 'five_juz';
+export type ExamResult = 'mumtaz' | 'jayyid_jiddan_plus' | 'jayyid_jiddan' | 'jayyid_plus' | 'jayyid' | 'maqbul' | 'rosib';
 
-export interface DailyLog {
+export interface HafalanBaruLog {
   id: string;
   student_id: string;
-  category: LogCategory;
-  type: LogType;
   juz_id: number;
   from_page: number;
   from_line: number;
@@ -26,16 +24,35 @@ export interface DailyLog {
   updated_at?: string;
 }
 
-export type ExamType = 'quarter_juz' | 'half_juz' | 'one_juz' | 'five_juz';
-export type ExamStatus = 'pending' | 'passed' | 'failed';
-
-export interface ExamSession {
+export interface PersiapanUjianLog {
   id: string;
   student_id: string;
+  juz_id: number;
   exam_type: ExamType;
-  status: ExamStatus;
-  juz_start?: number;
-  juz_end?: number;
+  juz_part: number;
+  note: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface UjianLog {
+  id: string;
+  student_id: string;
+  juz_id: number;
+  exam_type: ExamType;
+  juz_part: number;
+  result: ExamResult;
+  note: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface MurojaahLog {
+  id: string;
+  student_id: string;
+  juz_id: number;
+  total_pages: number;
+  note: string;
   created_at: string;
   updated_at?: string;
 }

@@ -8,10 +8,10 @@ import {
   calcHafalanMetrics, calcMurojaahMetrics, calcExamMetrics,
   calcBalance, generateAlerts, calcStudentRankings, calcClassSummary,
   getLast7DaysChart, getWeeklyChart,
-  type Alert, type BalanceStatus,
+  type Alert,
 } from '@/lib/analytics-utils';
 import { TrendIcon, GrowthBadge, MetricCard, PrepBenchmarkBadge, BalanceBadge } from '@/components/analytics/shared';
-import { AlertTriangle, AlertCircle, Flame, Target, BookOpen, RefreshCw, GraduationCap, Users, BarChart3 } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Flame, Target, BookOpen, RefreshCw, GraduationCap, Users, BarChart3, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const COLORS = ['hsl(213,94%,56%)', 'hsl(152,69%,41%)', 'hsl(25,95%,53%)', 'hsl(199,89%,48%)'];
@@ -36,26 +36,28 @@ const AlertItem = ({ alert }: { alert: Alert }) => (
 );
 
 const Analytics = () => {
-  const { students, dailyLogs, exams, fetchAll } = useAppStore();
+  const { students, hafalanBaruLogs, murojaahLogs, persiapanUjianLogs, ujianLogs, fetchAll } = useAppStore();
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const hafalan = useMemo(() => calcHafalanMetrics(dailyLogs), [dailyLogs]);
-  const murojaah = useMemo(() => calcMurojaahMetrics(dailyLogs), [dailyLogs]);
-  const exam = useMemo(() => calcExamMetrics(dailyLogs, exams), [dailyLogs, exams]);
-  const balance = useMemo(() => calcBalance(dailyLogs), [dailyLogs]);
-  const alerts = useMemo(() => generateAlerts(students, dailyLogs, exams), [students, dailyLogs, exams]);
-  const rankings = useMemo(() => calcStudentRankings(students, dailyLogs, exams), [students, dailyLogs, exams]);
-  const classSummary = useMemo(() => calcClassSummary(students, dailyLogs, exams), [students, dailyLogs, exams]);
-  const last7 = useMemo(() => getLast7DaysChart(dailyLogs), [dailyLogs]);
-  const weekly = useMemo(() => getWeeklyChart(dailyLogs), [dailyLogs]);
+  const hafalan = useMemo(() => calcHafalanMetrics(hafalanBaruLogs), [hafalanBaruLogs]);
+  const murojaah = useMemo(() => calcMurojaahMetrics(murojaahLogs), [murojaahLogs]);
+  const exam = useMemo(() => calcExamMetrics(persiapanUjianLogs, ujianLogs), [persiapanUjianLogs, ujianLogs]);
+  const balance = useMemo(() => calcBalance(hafalanBaruLogs, murojaahLogs), [hafalanBaruLogs, murojaahLogs]);
+  const alerts = useMemo(() => generateAlerts(students, hafalanBaruLogs, murojaahLogs, persiapanUjianLogs), [students, hafalanBaruLogs, murojaahLogs, persiapanUjianLogs]);
+  const rankings = useMemo(() => calcStudentRankings(students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs), [students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs]);
+  const classSummary = useMemo(() => calcClassSummary(students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs, murojaahLogs), [students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs, murojaahLogs]);
+  const last7 = useMemo(() => getLast7DaysChart(hafalanBaruLogs, murojaahLogs), [hafalanBaruLogs, murojaahLogs]);
+  const weekly = useMemo(() => getWeeklyChart(hafalanBaruLogs, murojaahLogs), [hafalanBaruLogs, murojaahLogs]);
 
   const examStats = useMemo(() => [
-    { name: 'Lulus', value: exam.passed },
-    { name: 'Pending', value: exam.pending },
+    { name: 'Mumtaz / Jayyid+', value: exam.passed },
+    { name: 'Jayyid / Maqbul', value: ujianLogs.filter(e => e.result === 'jayyid' || e.result === 'maqbul').length },
     { name: 'Gagal', value: exam.failed },
-  ].filter(e => e.value > 0), [exam]);
+  ].filter(e => e.value > 0), [exam, ujianLogs]);
+
+  const totalLogs = hafalanBaruLogs.length + murojaahLogs.length + persiapanUjianLogs.length + ujianLogs.length;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -141,8 +143,8 @@ const Analytics = () => {
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-3">
-              <MetricCard label="Total Catatan" value={dailyLogs.length} icon={<BookOpen className="w-3.5 h-3.5 text-primary" />} />
-              <MetricCard label="Total Baris" value={dailyLogs.reduce((s, l) => s + l.total_lines, 0)} icon={<Target className="w-3.5 h-3.5 text-hafalan" />} />
+              <MetricCard label="Total Catatan" value={totalLogs} icon={<BookOpen className="w-3.5 h-3.5 text-primary" />} />
+              <MetricCard label="Total Baris" value={hafalanBaruLogs.reduce((s, l) => s + l.total_lines, 0)} icon={<Target className="w-3.5 h-3.5 text-hafalan" />} />
             </div>
           </TabsContent>
 

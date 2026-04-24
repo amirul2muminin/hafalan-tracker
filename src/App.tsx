@@ -9,7 +9,6 @@ import StudentDetail from "./pages/StudentDetail";
 import AddMenu from "./pages/AddMenu";
 import AddHafalan from "./pages/AddHafalan";
 import AddMurojaah from "./pages/AddMurojaah";
-import AddExam from "./pages/AddExam";
 import AddTarget from "./pages/AddTarget";
 import Analytics from "./pages/Analytics";
 import StudentAnalytics from "./pages/StudentAnalytics";
@@ -31,7 +30,6 @@ const App = () => (
           <Route path="/add" element={<AddMenu />} />
           <Route path="/add/hafalan" element={<AddHafalan />} />
           <Route path="/add/murojaah" element={<AddMurojaah />} />
-          <Route path="/add/exam" element={<AddExam />} />
           <Route path="/add/target" element={<AddTarget />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="*" element={<NotFound />} />

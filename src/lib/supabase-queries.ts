@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Student, DailyLog, ExamSession, TargetHafalan, MurojaahCycle } from '@/types';
+import type { Student, HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, TargetHafalan, MurojaahCycle } from '@/types';
 
 // Students
 export async function fetchStudents(): Promise<Student[]> {
@@ -19,39 +19,64 @@ export async function deleteStudent(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// Daily Logs
-export async function fetchDailyLogs(studentId?: string): Promise<DailyLog[]> {
-  let query = supabase.from('daily_logs').select('*').order('created_at', { ascending: false });
+// Hafalan Baru Logs
+export async function fetchHafalanBaruLogs(studentId?: string): Promise<HafalanBaruLog[]> {
+  let query = supabase.from('hafalan_baru_logs').select('*').order('created_at', { ascending: false });
   if (studentId) query = query.eq('student_id', studentId);
   const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
 
-export async function insertDailyLog(log: Omit<DailyLog, 'id' | 'created_at'>): Promise<DailyLog> {
-  const { data, error } = await supabase.from('daily_logs').insert(log).select().single();
+export async function insertHafalanBaruLog(log: Omit<HafalanBaruLog, 'id' | 'created_at'>): Promise<HafalanBaruLog> {
+  const { data, error } = await supabase.from('hafalan_baru_logs').insert(log as any).select().single();
   if (error) throw error;
   return data;
 }
 
-// Exam Sessions
-export async function fetchExams(studentId?: string): Promise<ExamSession[]> {
-  let query = supabase.from('exam_sessions').select('*').order('created_at', { ascending: false });
+// Persiapan Ujian Logs
+export async function fetchPersiapanUjianLogs(studentId?: string): Promise<PersiapanUjianLog[]> {
+  let query = supabase.from('persiapan_ujian_logs').select('*').order('created_at', { ascending: false });
   if (studentId) query = query.eq('student_id', studentId);
   const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
 
-export async function insertExam(exam: Omit<ExamSession, 'id' | 'created_at'>): Promise<ExamSession> {
-  const { data, error } = await supabase.from('exam_sessions').insert(exam).select().single();
+export async function insertPersiapanUjianLog(log: Omit<PersiapanUjianLog, 'id' | 'created_at'>): Promise<PersiapanUjianLog> {
+  const { data, error } = await supabase.from('persiapan_ujian_logs').insert(log as any).select().single();
   if (error) throw error;
   return data;
 }
 
-export async function updateExamStatus(id: string, status: ExamSession['status']): Promise<void> {
-  const { error } = await supabase.from('exam_sessions').update({ status }).eq('id', id);
+// Ujian Logs
+export async function fetchUjianLogs(studentId?: string): Promise<UjianLog[]> {
+  let query = supabase.from('ujian_logs').select('*').order('created_at', { ascending: false });
+  if (studentId) query = query.eq('student_id', studentId);
+  const { data, error } = await query;
   if (error) throw error;
+  return data || [];
+}
+
+export async function insertUjianLog(log: Omit<UjianLog, 'id' | 'created_at'>): Promise<UjianLog> {
+  const { data, error } = await supabase.from('ujian_logs').insert(log as any).select().single();
+  if (error) throw error;
+  return data;
+}
+
+// Murojaah Logs
+export async function fetchMurojaahLogs(studentId?: string): Promise<MurojaahLog[]> {
+  let query = supabase.from('murojaah_logs').select('*').order('created_at', { ascending: false });
+  if (studentId) query = query.eq('student_id', studentId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+export async function insertMurojaahLog(log: Omit<MurojaahLog, 'id' | 'created_at'>): Promise<MurojaahLog> {
+  const { data, error } = await supabase.from('murojaah_logs').insert(log as any).select().single();
+  if (error) throw error;
+  return data;
 }
 
 // Target Hafalan
@@ -78,7 +103,7 @@ export async function fetchMurojaahCycle(studentId: string): Promise<MurojaahCyc
 
 export async function upsertMurojaahCycle(cycle: Omit<MurojaahCycle, 'id'>): Promise<MurojaahCycle> {
   const { data, error } = await supabase.from('murojaah_cycles')
-    .upsert(cycle, { onConflict: 'student_id' })
+    .upsert(cycle as any, { onConflict: 'student_id' })
     .select()
     .single();
   if (error) throw error;

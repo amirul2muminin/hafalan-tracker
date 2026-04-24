@@ -21,7 +21,7 @@ const tabs = [
 const StudentDetail = () => {
   const { studentId } = useParams();
   const navigate = useNavigate();
-  const { students, getStudentLogs, getStudentExams, getStudentTargets, getStudentProgress, murojaahCycles, updateExamStatus, fetchStudentData } = useAppStore();
+  const { students, getStudentHafalanLogs, getStudentUjianLogs, getStudentMurojaahLogs, getStudentTargets, getStudentProgress, murojaahCycles, fetchStudentData } = useAppStore();
   const [activeTab, setActiveTab] = useState<string>('hafalan');
 
   useEffect(() => {
@@ -31,14 +31,12 @@ const StudentDetail = () => {
   const student = students.find((s) => s.id === studentId);
   if (!student) return <div className="p-4">Murid tidak ditemukan</div>;
 
-  const logs = getStudentLogs(student.id);
-  const exams = getStudentExams(student.id);
+  const hafalanLogs = getStudentHafalanLogs(student.id);
+  const murojaahLogs = getStudentMurojaahLogs(student.id);
+  const exams = getStudentUjianLogs(student.id);
   const targets = getStudentTargets(student.id);
   const progress = getStudentProgress(student.id);
   const cycle = murojaahCycles[student.id];
-
-  const hafalanLogs = logs.filter((l) => l.category === 'hafalan_baru');
-  const murojaahLogs = logs.filter((l) => l.category === 'murojaah');
 
   const mainTarget = targets[0];
   const pct = mainTarget ? Math.min(100, Math.round(((mainTarget.current_value || progress.total_juz) / mainTarget.target_value) * 100)) : 0;
@@ -105,7 +103,7 @@ const StudentDetail = () => {
             {hafalanLogs.map((log) => (
               <div key={log.id} className="bg-card rounded-xl p-3 border border-border">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold category-hafalan px-2 py-0.5 rounded-full">{log.type}</span>
+                  <span className="text-xs font-semibold category-hafalan px-2 py-0.5 rounded-full">Setoran</span>
                   <span className="text-[10px] text-muted-foreground">{format(new Date(log.created_at), 'd MMM', { locale: idLocale })}</span>
                 </div>
                 <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id} · Hal {log.from_page}:{log.from_line}–{log.to_page}:{log.to_line}</p>
@@ -135,10 +133,10 @@ const StudentDetail = () => {
             {murojaahLogs.map((log) => (
               <div key={log.id} className="bg-card rounded-xl p-3 border border-border">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold category-murojaah px-2 py-0.5 rounded-full">{log.pages} hal</span>
+                  <span className="text-xs font-semibold category-murojaah px-2 py-0.5 rounded-full">{log.total_pages} hal</span>
                   <span className="text-[10px] text-muted-foreground">{format(new Date(log.created_at), 'd MMM', { locale: idLocale })}</span>
                 </div>
-                <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id} · Hal {log.from_page}:{log.from_line}–{log.to_page}:{log.to_line}</p>
+                <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id}</p>
                 {log.note && <p className="text-xs text-muted-foreground mt-1 italic">"{log.note}"</p>}
               </div>
             ))}
@@ -149,7 +147,7 @@ const StudentDetail = () => {
           <>
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs text-muted-foreground">{exams.length} ujian</span>
-              <Button size="sm" onClick={() => navigate(`/add/exam?student=${student.id}`)}>
+              <Button size="sm" onClick={() => navigate(`/add/hafalan?type=ujian&student=${student.id}`)}>
                 <Plus className="w-3.5 h-3.5 mr-1" /> Ujian
               </Button>
             </div>
@@ -162,24 +160,18 @@ const StudentDetail = () => {
                   </span>
                   <span className={cn(
                     'text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1',
-                    exam.status === 'passed' && 'bg-success/10 text-success',
-                    exam.status === 'failed' && 'bg-destructive/10 text-destructive',
-                    exam.status === 'pending' && 'bg-warning/10 text-warning',
+                    (exam.result === 'mumtaz' || exam.result === 'jayyid_jiddan' || exam.result === 'jayyid_jiddan_plus') && 'bg-success/10 text-success',
+                    exam.result === 'rosib' && 'bg-destructive/10 text-destructive',
+                    (exam.result === 'jayyid' || exam.result === 'jayyid_plus' || exam.result === 'maqbul') && 'bg-warning/10 text-warning',
                   )}>
-                    {exam.status === 'passed' && <CheckCircle2 className="w-3 h-3" />}
-                    {exam.status === 'failed' && <XCircle className="w-3 h-3" />}
-                    {exam.status === 'pending' && <Clock className="w-3 h-3" />}
-                    {exam.status}
+                    {(exam.result === 'mumtaz' || exam.result === 'jayyid_jiddan' || exam.result === 'jayyid_jiddan_plus') && <CheckCircle2 className="w-3 h-3" />}
+                    {exam.result === 'rosib' && <XCircle className="w-3 h-3" />}
+                    {(exam.result === 'jayyid' || exam.result === 'jayyid_plus' || exam.result === 'maqbul') && <Clock className="w-3 h-3" />}
+                    {exam.result.replace(/_/g, ' ').replace('plus', '+').toUpperCase()}
                   </span>
                 </div>
-                <p className="text-sm font-semibold text-foreground mt-1">Juz {exam.juz_start}{exam.juz_end && exam.juz_end !== exam.juz_start ? `–${exam.juz_end}` : ''}</p>
+                <p className="text-sm font-semibold text-foreground mt-1">Juz Part {exam.juz_part}</p>
                 <p className="text-xs text-muted-foreground">{format(new Date(exam.created_at), 'd MMM yyyy', { locale: idLocale })}</p>
-                {exam.status === 'pending' && (
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={() => updateExamStatus(exam.id, 'passed')} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-success/10 text-success">Lulus</button>
-                    <button onClick={() => updateExamStatus(exam.id, 'failed')} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-destructive/10 text-destructive">Tidak Lulus</button>
-                  </div>
-                )}
               </div>
             ))}
           </>

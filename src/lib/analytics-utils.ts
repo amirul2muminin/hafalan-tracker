@@ -1,4 +1,4 @@
-import type { DailyLog, ExamSession, Student, TargetHafalan, StudentProgress } from '@/types';
+import type { HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, Student, TargetHafalan, StudentProgress } from '@/types';
 import { linesToPages, pagesToJuz } from './juz-mapping';
 
 // ─── Time helpers ────────────────────────────────────────────
@@ -25,21 +25,21 @@ function inRange(dateStr: string, start: Date, end: Date) {
   return d >= start && d <= end;
 }
 
-function filterLogs(logs: DailyLog[], opts: { studentId?: string; category?: string; type?: string; start?: Date; end?: Date }) {
+type BaseLog = { student_id: string; created_at: string };
+
+function filterLogs<T extends BaseLog>(logs: T[], opts: { studentId?: string; start?: Date; end?: Date }): T[] {
   return logs.filter(l => {
     if (opts.studentId && l.student_id !== opts.studentId) return false;
-    if (opts.category && l.category !== opts.category) return false;
-    if (opts.type && l.type !== opts.type) return false;
     if (opts.start && opts.end && !inRange(l.created_at, opts.start, opts.end)) return false;
     return true;
   });
 }
 
-function sumLines(logs: DailyLog[]) {
+function sumLines(logs: HafalanBaruLog[]) {
   return logs.reduce((s, l) => s + l.total_lines, 0);
 }
 
-function uniqueDays(logs: DailyLog[]) {
+function uniqueDays(logs: BaseLog[]) {
   return new Set(logs.map(l => l.created_at.split('T')[0])).size;
 }
 
@@ -57,19 +57,19 @@ function calcTrend(values: number[]): TrendDirection {
 }
 
 // Weekly breakdown for trend (last N weeks)
-function weeklyLines(logs: DailyLog[], weeks: number, category?: string): number[] {
+function weeklyLines(logs: HafalanBaruLog[], weeks: number): number[] {
   const result: number[] = [];
   for (let i = weeks - 1; i >= 0; i--) {
     const end = new Date(); end.setDate(end.getDate() - i * 7);
     const start = new Date(end); start.setDate(start.getDate() - 6);
-    const filtered = filterLogs(logs, { category, start, end });
+    const filtered = filterLogs(logs, { start, end });
     result.push(sumLines(filtered));
   }
   return result;
 }
 
 // ─── Streak calculation ──────────────────────────────────────
-function calcStreak(logs: DailyLog[]): { current: number; longest: number } {
+function calcStreak(logs: BaseLog[]): { current: number; longest: number } {
   const dates = [...new Set(logs.map(l => l.created_at.split('T')[0]))].sort();
   if (!dates.length) return { current: 0, longest: 0 };
 
@@ -113,8 +113,8 @@ export interface HafalanMetrics {
   bestWeekLines: number;
 }
 
-export function calcHafalanMetrics(logs: DailyLog[], studentId?: string): HafalanMetrics {
-  const all = filterLogs(logs, { studentId, category: 'hafalan_baru' });
+export function calcHafalanMetrics(logs: HafalanBaruLog[], studentId?: string): HafalanMetrics {
+  const all = filterLogs(logs, { studentId });
   const totalLines = sumLines(all);
   const totalPages = linesToPages(totalLines);
   const totalJuz = pagesToJuz(totalPages);
@@ -164,16 +164,22 @@ export interface MurojaahMetrics {
   trend: TrendDirection;
 }
 
-export function calcMurojaahMetrics(logs: DailyLog[], studentId?: string): MurojaahMetrics {
-  const all = filterLogs(logs, { studentId, category: 'murojaah' });
-  const totalLines = sumLines(all);
-  const totalPages = linesToPages(totalLines);
+export function calcMurojaahMetrics(logs: MurojaahLog[], studentId?: string): MurojaahMetrics {
+  const all = filterLogs(logs, { studentId });
+  const totalPages = all.reduce((s, l) => s + l.total_pages, 0);
 
   const { start: ws, end: we } = getDateRange('week');
   const activeDaysThisWeek = uniqueDays(filterLogs(all, { start: ws, end: we }));
 
-  const wt = weeklyLines(all, 8);
-  const avgPagesPerWeek = wt.length ? Math.round(linesToPages(wt.reduce((s, v) => s + v, 0) / wt.length)) : 0;
+  const wt: number[] = [];
+  for (let i = 7; i >= 0; i--) {
+    const end = new Date(); end.setDate(end.getDate() - i * 7);
+    const start = new Date(end); start.setDate(start.getDate() - 6);
+    const filtered = filterLogs(all, { start, end });
+    wt.push(filtered.reduce((s, l) => s + l.total_pages, 0));
+  }
+
+  const avgPagesPerWeek = wt.length ? Math.round(wt.reduce((s, v) => s + v, 0) / wt.length) : 0;
 
   return {
     totalPages,
@@ -190,30 +196,26 @@ export interface ExamMetrics {
   totalExams: number;
   passed: number;
   failed: number;
-  pending: number;
   passRate: number;
   avgPrepDays: number;
   prepBenchmark: 'excellent' | 'normal' | 'slow' | 'critical' | 'none';
   prepTrend: TrendDirection;
 }
 
-export function calcExamMetrics(logs: DailyLog[], exams: ExamSession[], studentId?: string): ExamMetrics {
-  const studentExams = studentId ? exams.filter(e => e.student_id === studentId) : exams;
-  const passed = studentExams.filter(e => e.status === 'passed').length;
-  const failed = studentExams.filter(e => e.status === 'failed').length;
-  const pending = studentExams.filter(e => e.status === 'pending').length;
+export function calcExamMetrics(prepLogs: PersiapanUjianLog[], ujianLogs: UjianLog[], studentId?: string): ExamMetrics {
+  const studentExams = filterLogs(ujianLogs, { studentId });
+  const passed = studentExams.filter(e => e.result === 'mumtaz' || e.result === 'jayyid_jiddan_plus' || e.result === 'jayyid_jiddan' || e.result === 'jayyid_plus' || e.result === 'jayyid' || e.result === 'maqbul').length;
+  const failed = studentExams.filter(e => e.result === 'rosib').length;
   const totalExams = studentExams.length;
   const passRate = totalExams > 0 ? Math.round((passed / (passed + failed || 1)) * 100) : 0;
 
-  // Prep days: count logs with type 'persiapan_ujian' grouped by exam
-  const prepLogs = filterLogs(logs, { studentId, type: 'persiapan_ujian' });
+  const sPrepLogs = filterLogs(prepLogs, { studentId });
   const prepDaysPerExam: number[] = [];
 
-  // Group prep logs by approximate exam (within 14 days before exam)
   for (const exam of studentExams) {
     const examDate = new Date(exam.created_at);
     const twoWeeksBefore = new Date(examDate); twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
-    const days = uniqueDays(filterLogs(prepLogs, { start: twoWeeksBefore, end: examDate }));
+    const days = uniqueDays(filterLogs(sPrepLogs, { start: twoWeeksBefore, end: examDate }));
     if (days > 0) prepDaysPerExam.push(days);
   }
 
@@ -228,7 +230,7 @@ export function calcExamMetrics(logs: DailyLog[], exams: ExamSession[], studentI
   }
 
   return {
-    totalExams, passed, failed, pending, passRate,
+    totalExams, passed, failed, passRate,
     avgPrepDays, prepBenchmark, prepTrend: calcTrend(prepDaysPerExam),
   };
 }
@@ -236,10 +238,10 @@ export function calcExamMetrics(logs: DailyLog[], exams: ExamSession[], studentI
 // ─── Balance Metric ──────────────────────────────────────────
 export type BalanceStatus = 'balanced' | 'hafalan_heavy' | 'murojaah_heavy' | 'no_data';
 
-export function calcBalance(logs: DailyLog[], studentId?: string): { ratio: number; status: BalanceStatus } {
+export function calcBalance(hLogs: HafalanBaruLog[], mLogs: MurojaahLog[], studentId?: string): { ratio: number; status: BalanceStatus } {
   const { start, end } = getDateRange('month');
-  const hafalanLines = sumLines(filterLogs(logs, { studentId, category: 'hafalan_baru', start, end }));
-  const murojaahLines = sumLines(filterLogs(logs, { studentId, category: 'murojaah', start, end }));
+  const hafalanLines = sumLines(filterLogs(hLogs, { studentId, start, end }));
+  const murojaahLines = filterLogs(mLogs, { studentId, start, end }).reduce((s, l) => s + l.total_pages * 15, 0); // approx lines
 
   if (!hafalanLines && !murojaahLines) return { ratio: 0, status: 'no_data' };
   const total = hafalanLines + murojaahLines;
@@ -259,14 +261,18 @@ export interface Alert {
   message: string;
 }
 
-export function generateAlerts(students: Student[], logs: DailyLog[], exams: ExamSession[]): Alert[] {
+export function generateAlerts(
+  students: Student[], 
+  hLogs: HafalanBaruLog[], 
+  mLogs: MurojaahLog[], 
+  pLogs: PersiapanUjianLog[]
+): Alert[] {
   const alerts: Alert[] = [];
   const today = new Date();
 
   for (const student of students) {
-    const sLogs = logs.filter(l => l.student_id === student.id);
-    const hafalanLogs = sLogs.filter(l => l.category === 'hafalan_baru');
-    const murojaahLogs = sLogs.filter(l => l.category === 'murojaah');
+    const hafalanLogs = hLogs.filter(l => l.student_id === student.id);
+    const murojaahLogs = mLogs.filter(l => l.student_id === student.id);
 
     // Hafalan: no setoran > 3 days
     if (hafalanLogs.length > 0) {
@@ -318,22 +324,6 @@ export function generateAlerts(students: Student[], logs: DailyLog[], exams: Exa
         });
       }
     }
-
-    // Exam: prep > 5 days
-    const sExams = exams.filter(e => e.student_id === student.id);
-    for (const exam of sExams.filter(e => e.status === 'pending')) {
-      const examDate = new Date(exam.created_at);
-      const prepStart = new Date(examDate); prepStart.setDate(prepStart.getDate() - 14);
-      const prepDays = uniqueDays(filterLogs(sLogs.filter(l => l.type === 'persiapan_ujian'), { start: prepStart, end: examDate }));
-      if (prepDays > 5) {
-        alerts.push({
-          studentId: student.id, studentName: student.name,
-          type: prepDays > 7 ? 'danger' : 'warning',
-          category: 'ujian',
-          message: `Persiapan ujian ${prepDays} hari`,
-        });
-      }
-    }
   }
 
   return alerts.sort((a, b) => (a.type === 'danger' ? -1 : 1) - (b.type === 'danger' ? -1 : 1));
@@ -349,10 +339,15 @@ export interface StudentRanking {
   tier: 'top' | 'middle' | 'bottom';
 }
 
-export function calcStudentRankings(students: Student[], logs: DailyLog[], exams: ExamSession[]): StudentRanking[] {
+export function calcStudentRankings(
+  students: Student[], 
+  hLogs: HafalanBaruLog[], 
+  pLogs: PersiapanUjianLog[], 
+  uLogs: UjianLog[]
+): StudentRanking[] {
   const rankings = students.map(s => {
-    const h = calcHafalanMetrics(logs, s.id);
-    const e = calcExamMetrics(logs, exams, s.id);
+    const h = calcHafalanMetrics(hLogs, s.id);
+    const e = calcExamMetrics(pLogs, uLogs, s.id);
     return {
       studentId: s.id,
       name: s.name,
@@ -374,30 +369,32 @@ export function calcStudentRankings(students: Student[], logs: DailyLog[], exams
 }
 
 // ─── Daily chart data (last 7 days) ──────────────────────────
-export function getLast7DaysChart(logs: DailyLog[]) {
+export function getLast7DaysChart(hLogs: HafalanBaruLog[], mLogs: MurojaahLog[]) {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
     const dateStr = d.toISOString().split('T')[0];
-    const dayLogs = logs.filter(l => l.created_at.startsWith(dateStr));
+    const dayHLogs = hLogs.filter(l => l.created_at.startsWith(dateStr));
+    const dayMLogs = mLogs.filter(l => l.created_at.startsWith(dateStr));
     return {
       day: d.toLocaleDateString('id', { weekday: 'short' }),
-      hafalan: dayLogs.filter(l => l.category === 'hafalan_baru').reduce((s, l) => s + l.total_lines, 0),
-      murojaah: dayLogs.filter(l => l.category === 'murojaah').reduce((s, l) => s + l.total_lines, 0),
+      hafalan: dayHLogs.reduce((s, l) => s + l.total_lines, 0),
+      murojaah: dayMLogs.reduce((s, l) => s + l.total_pages * 15, 0),
     };
   });
 }
 
 // ─── Weekly chart data (last 8 weeks) ────────────────────────
-export function getWeeklyChart(logs: DailyLog[]) {
+export function getWeeklyChart(hLogs: HafalanBaruLog[], mLogs: MurojaahLog[]) {
   return Array.from({ length: 8 }, (_, i) => {
     const end = new Date(); end.setDate(end.getDate() - (7 - i) * 7);
     const start = new Date(end); start.setDate(start.getDate() - 6);
-    const weekLogs = logs.filter(l => inRange(l.created_at, start, end));
+    const weekHLogs = filterLogs(hLogs, { start, end });
+    const weekMLogs = filterLogs(mLogs, { start, end });
     return {
       week: `M${8 - (7 - i)}`,
-      hafalan: weekLogs.filter(l => l.category === 'hafalan_baru').reduce((s, l) => s + l.total_lines, 0),
-      murojaah: weekLogs.filter(l => l.category === 'murojaah').reduce((s, l) => s + l.total_lines, 0),
+      hafalan: weekHLogs.reduce((s, l) => s + l.total_lines, 0),
+      murojaah: weekMLogs.reduce((s, l) => s + l.total_pages * 15, 0),
     };
   });
 }
@@ -413,15 +410,21 @@ export interface ClassSummary {
   alertCount: number;
 }
 
-export function calcClassSummary(students: Student[], logs: DailyLog[], exams: ExamSession[]): ClassSummary {
-  const alerts = generateAlerts(students, logs, exams);
+export function calcClassSummary(
+  students: Student[], 
+  hLogs: HafalanBaruLog[], 
+  pLogs: PersiapanUjianLog[], 
+  uLogs: UjianLog[], 
+  mLogs: MurojaahLog[]
+): ClassSummary {
+  const alerts = generateAlerts(students, hLogs, mLogs, pLogs);
   let totalLinesWeek = 0, totalMuroPages = 0, totalPrep = 0, declining = 0, active = 0;
   let prepCount = 0;
 
   for (const s of students) {
-    const h = calcHafalanMetrics(logs, s.id);
-    const m = calcMurojaahMetrics(logs, s.id);
-    const e = calcExamMetrics(logs, exams, s.id);
+    const h = calcHafalanMetrics(hLogs, s.id);
+    const m = calcMurojaahMetrics(mLogs, s.id);
+    const e = calcExamMetrics(pLogs, uLogs, s.id);
     totalLinesWeek += h.linesThisWeek;
     totalMuroPages += m.avgPagesPerWeek;
     if (e.avgPrepDays > 0) { totalPrep += e.avgPrepDays; prepCount++; }
@@ -441,7 +444,6 @@ export function calcClassSummary(students: Student[], logs: DailyLog[], exams: E
   };
 }
 
-// ─── Target metrics ──────────────────────────────────────────
 export interface TargetMetrics {
   id: string;
   targetType: TargetHafalan['target_type'];
@@ -468,53 +470,4 @@ export function calcTargetMetrics(
     const status: TargetMetrics['status'] = progressPct >= 100 ? 'completed' : isLate ? 'late' : 'on-track';
     return { id: t.id, targetType: t.target_type, targetValue: t.target_value, currentValue, progressPct, deadline: t.deadline, status };
   });
-}
-
-// ─── Prep efficiency ─────────────────────────────────────────
-export interface PrepEfficiency {
-  linesPerDay: number;
-  minPrepDays: number;
-  maxPrepDays: number;
-}
-
-export function calcPrepEfficiency(
-  logs: DailyLog[],
-  exams: ExamSession[],
-  studentId?: string,
-): PrepEfficiency {
-  const studentExams = studentId ? exams.filter((e) => e.student_id === studentId) : exams;
-  const prepLogs = filterLogs(logs, { studentId, type: 'persiapan_ujian' });
-
-  const prepDaysPerExam: number[] = [];
-  let totalExamLines = 0;
-
-  for (const exam of studentExams) {
-    const examDate = new Date(exam.created_at);
-    const cutoff = new Date(examDate);
-    cutoff.setDate(cutoff.getDate() - 14);
-    const days = new Set(
-      prepLogs
-        .filter((l) => {
-          const d = new Date(l.created_at);
-          return d >= cutoff && d <= examDate;
-        })
-        .map((l) => l.created_at.split('T')[0]),
-    ).size;
-    if (days > 0) {
-      prepDaysPerExam.push(days);
-      totalExamLines += prepLogs
-        .filter((l) => {
-          const d = new Date(l.created_at);
-          return d >= cutoff && d <= examDate;
-        })
-        .reduce((s, l) => s + l.total_lines, 0);
-    }
-  }
-
-  const totalPrepDays = prepDaysPerExam.reduce((a, b) => a + b, 0);
-  return {
-    linesPerDay: totalPrepDays > 0 ? Math.round(totalExamLines / totalPrepDays) : 0,
-    minPrepDays: prepDaysPerExam.length > 0 ? Math.min(...prepDaysPerExam) : 0,
-    maxPrepDays: prepDaysPerExam.length > 0 ? Math.max(...prepDaysPerExam) : 0,
-  };
 }
