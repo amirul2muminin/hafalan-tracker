@@ -4,8 +4,6 @@ import { linesToPages, pagesToJuz } from '@/lib/juz-mapping';
 import * as api from '@/lib/supabase-queries';
 import { persist } from 'zustand/middleware';
 
-const PAGES_SEQUENCE = [3, 6, 9, 12, 15, 18, 20];
-
 interface AppState {
   students: Student[];
   hafalanBaruLogs: HafalanBaruLog[];
@@ -219,12 +217,20 @@ export const useAppStore = create<AppState>()(
 );
 
 
-// utils function
-const mergeById = <T extends { id: string }>(oldArr: T[], newArr: T[]) => {
+const mergeById = <T extends { id: string; deleted_at?: string | null }>(
+  oldArr: T[],
+  newArr: T[]
+) => {
   const map = new Map(oldArr.map((i) => [i.id, i]));
+
   for (const item of newArr) {
-    map.set(item.id, item);
+    if (item.deleted_at) {
+      map.delete(item.id); // 🔥 hapus dari state
+    } else {
+      map.set(item.id, item);
+    }
   }
+
   return Array.from(map.values());
 };
 

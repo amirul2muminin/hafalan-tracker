@@ -128,6 +128,19 @@ CREATE POLICY "Allow all access to persiapan_ujian_logs" ON public.persiapan_uji
 CREATE POLICY "Allow all access to ujian_logs" ON public.ujian_logs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to murojaah_logs" ON public.murojaah_logs FOR ALL USING (true) WITH CHECK (true);
 
+-- Index updated_at and deleted_at cuz it's involved alot
+CREATE INDEX idx_students_updated_at ON public.students(updated_at);
+CREATE INDEX idx_hafalan_baru_logs_updated_at ON public.hafalan_baru_logs(updated_at);
+CREATE INDEX idx_persiapan_ujian_logs_updated_at ON public.persiapan_ujian_logs(updated_at);
+CREATE INDEX idx_ujian_logs_updated_at ON public.ujian_logs(updated_at);
+CREATE INDEX idx_murojaah_logs_updated_at ON public.murojaah_logs(updated_at);
+
+CREATE INDEX idx_students_not_deleted ON public.students(deleted_at);
+CREATE INDEX idx_hafalan_baru_logs_not_deleted ON public.hafalan_baru_logs(deleted_at);
+CREATE INDEX idx_persiapan_ujian_logs_not_deleted ON public.persiapan_ujian_logs(deleted_at);
+CREATE INDEX idx_ujian_logs_not_deleted ON public.ujian_logs(deleted_at);
+CREATE INDEX idx_murojaah_logs_not_deleted ON public.murojaah_logs(deleted_at);
+
 -- Seed sample students
 INSERT INTO public.students (id, name) VALUES 
   ('a1b2c3d4-0001-4000-8000-000000000001', 'Ahmad Fauzi'),
