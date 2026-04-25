@@ -8,31 +8,28 @@ import { toast } from '@/hooks/use-toast';
 const AddMurojaah = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { students, addMurojaahLog, updateMurojaahCycle, murojaahCycles } = useAppStore();
+  const { students, addMurojaahLog } = useAppStore();
   const preselected = params.get('student') || '';
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     student_id: preselected,
     juz_id: 30,
+    total_pages: 3,
     note: '',
   });
-
-  const cycle = form.student_id ? murojaahCycles[form.student_id] : null;
-  const nextPages = cycle?.current_pages || 3;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.student_id) { toast({ title: 'Pilih murid', variant: 'destructive' }); return; }
     setSubmitting(true);
     try {
-      const updatedCycle = await updateMurojaahCycle(form.student_id);
       await addMurojaahLog({
         student_id: form.student_id,
         juz_id: form.juz_id,
-        total_pages: updatedCycle.current_pages,
+        total_pages: form.total_pages,
         note: form.note,
       });
-      toast({ title: `Murojaah ${updatedCycle.current_pages} halaman berhasil ✅` });
+      toast({ title: `Murojaah ${form.total_pages} halaman berhasil ✅` });
       navigate(-1);
     } catch {
       toast({ title: 'Gagal menyimpan', variant: 'destructive' });
@@ -52,16 +49,24 @@ const AddMurojaah = () => {
           </select>
         </div>
 
-        <div className="bg-murojaah-light rounded-xl p-4 text-center">
-          <p className="text-xs font-semibold text-murojaah-foreground mb-1">Target Halaman Hari Ini</p>
-          <span className="text-3xl font-bold text-foreground">{nextPages}</span>
-          <p className="text-xs text-muted-foreground mt-1">Siklus: 3 → 6 → 9 → ... → 20 → reset</p>
+        <div>
+          <label className="text-xs font-semibold text-foreground mb-1 block">Jumlah Halaman</label>
+          <select value={form.total_pages} onChange={(e) => setForm({ ...form, total_pages: +e.target.value })}
+            className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+            {Array.from({ length: 30 }, (_, i) => i + 1).map(num => (
+              <option key={num} value={num}>{num} Halaman</option>
+            ))}
+          </select>
         </div>
 
         <div>
           <label className="text-xs font-semibold text-foreground mb-1 block">Juz</label>
-          <input type="number" min={1} max={30} value={form.juz_id} onChange={(e) => setForm({ ...form, juz_id: +e.target.value })}
-            className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          <select value={form.juz_id} onChange={(e) => setForm({ ...form, juz_id: +e.target.value })}
+            className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+            {Array.from({ length: 30 }, (_, i) => i + 1).map(num => (
+              <option key={num} value={num}>{num}</option>
+            ))}
+          </select>
         </div>
 
         <div>

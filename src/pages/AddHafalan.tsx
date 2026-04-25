@@ -137,8 +137,12 @@ const AddHafalan = () => {
 
         <div>
           <label className="text-xs font-semibold text-foreground mb-1 block">Juz</label>
-          <input type="number" min={1} max={30} value={form.juz_id} onChange={(e) => handleJuzChange(+e.target.value)}
-            className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          <select value={form.juz_id} onChange={(e) => handleJuzChange(+e.target.value)}
+            className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+            {Array.from({ length: 30 }, (_, i) => i + 1).map(num => (
+              <option key={num} value={num}>{num}</option>
+            ))}
+          </select>
           {form.type === 'setoran' && juzRange && <p className="text-[10px] text-muted-foreground mt-1">Halaman {juzRange.start} – {juzRange.end}</p>}
         </div>
 
@@ -147,30 +151,42 @@ const AddHafalan = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1 block">Dari Halaman</label>
-                <input type="number" min={juzRange?.start || 1} max={juzRange?.end || 604} value={form.from_page}
-                  onChange={(e) => setForm({ ...form, from_page: +e.target.value })}
-                  className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <select value={form.from_page} onChange={(e) => setForm({ ...form, from_page: +e.target.value })}
+                  className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  {juzRange && Array.from({ length: juzRange.end - juzRange.start + 1 }, (_, i) => juzRange.start + i).map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1 block">Dari Baris</label>
-                <input type="number" min={1} max={15} value={form.from_line}
-                  onChange={(e) => setForm({ ...form, from_line: +e.target.value })}
-                  className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <select value={form.from_line} onChange={(e) => setForm({ ...form, from_line: +e.target.value })}
+                  className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  {Array.from({ length: 15 }, (_, i) => i + 1).map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1 block">Sampai Halaman</label>
-                <input type="number" min={juzRange?.start || 1} max={juzRange?.end || 604} value={form.to_page}
-                  onChange={(e) => setForm({ ...form, to_page: +e.target.value })}
-                  className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <select value={form.to_page} onChange={(e) => setForm({ ...form, to_page: +e.target.value })}
+                  className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  {juzRange && Array.from({ length: juzRange.end - juzRange.start + 1 }, (_, i) => juzRange.start + i).map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1 block">Sampai Baris</label>
-                <input type="number" min={1} max={15} value={form.to_line}
-                  onChange={(e) => setForm({ ...form, to_line: +e.target.value })}
-                  className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <select value={form.to_line} onChange={(e) => setForm({ ...form, to_line: +e.target.value })}
+                  className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  {Array.from({ length: 15 }, (_, i) => i + 1).map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -194,8 +210,12 @@ const AddHafalan = () => {
             
             <div>
               <label className="text-xs font-semibold text-foreground mb-1 block">Juz Part (ke-)</label>
-              <input type="number" min={1} value={form.juz_part} onChange={(e) => setForm({ ...form, juz_part: +e.target.value })}
-                className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <select value={form.juz_part} onChange={(e) => setForm({ ...form, juz_part: +e.target.value })}
+                className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+                {Array.from({ length: 4 }, (_, i) => i + 1).map(num => (
+                  <option key={num} value={num}>{num}</option>
+                ))}
+              </select>
             </div>
           </>
         )}
