@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 const tabs = [
   { key: 'hafalan', label: 'Hafalan', icon: BookOpen },
   { key: 'murojaah', label: 'Murojaah', icon: RefreshCw },
-  { key: 'ujian', label: 'Ujian', icon: ClipboardCheck },
 ] as const;
 
 const StudentDetail = () => {
@@ -87,14 +86,67 @@ const StudentDetail = () => {
             </div>
             {hafalanLogs.length === 0 && <EmptyState icon={<BookOpen className="w-5 h-5 text-muted-foreground" />} title="Belum ada hafalan" />}
             {hafalanLogs.map((log) => (
-              <div key={log.id} className="bg-card rounded-xl p-3 border border-border">
+              <div
+                key={log.id}
+                className="bg-card rounded-2xl p-4 border border-border space-y-4"
+              >
+                {/* Header */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold category-hafalan px-2 py-0.5 rounded-full">Setoran</span>
-                  <span className="text-[10px] text-muted-foreground">{format(new Date(log.created_at), 'd MMM', { locale: idLocale })}</span>
+                  <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                    Setoran
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {format(new Date(log.created_at), "d MMM", { locale: idLocale })}
+                  </span>
                 </div>
-                <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id} · Hal {log.from_page}:{log.from_line}–{log.to_page}:{log.to_line}</p>
-                <p className="text-xs text-muted-foreground">{log.total_lines} baris · {log.pages} halaman</p>
-                {log.note && <p className="text-xs text-muted-foreground mt-1 italic">"{log.note}"</p>}
+
+                {/* Title */}
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Juz {log.juz_id}
+                  </p>
+                </div>
+
+                {/* Range (Start → End) */}
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Mulai
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      Hal {log.from_page}, baris {log.from_line}
+                    </p>
+                  </div>
+
+                  <div className="text-muted-foreground text-sm">→</div>
+
+                  <div className="flex-1 text-right">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Selesai
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      Hal {log.to_page}, baris {log.to_line}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="h-px bg-border" />
+
+                {/* Stats */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Total Setoran</span>
+                  <span>{log.total_lines} baris</span>
+                </div>
+
+                {/* Note */}
+                {log.note && (
+                  <div className="bg-muted rounded-lg px-3 py-2">
+                    <p className="text-xs italic text-muted-foreground leading-relaxed">
+                      "{log.note}"
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </>
@@ -118,40 +170,6 @@ const StudentDetail = () => {
                 </div>
                 <p className="text-sm font-semibold text-foreground mt-1">Juz {log.juz_id}</p>
                 {log.note && <p className="text-xs text-muted-foreground mt-1 italic">"{log.note}"</p>}
-              </div>
-            ))}
-          </>
-        )}
-
-        {activeTab === 'ujian' && (
-          <>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-muted-foreground">{exams.length} ujian</span>
-              <Button size="sm" onClick={() => navigate(`/add/hafalan?type=ujian&student=${student.id}`)}>
-                <Plus className="w-3.5 h-3.5 mr-1" /> Ujian
-              </Button>
-            </div>
-            {exams.length === 0 && <EmptyState icon={<ClipboardCheck className="w-5 h-5 text-muted-foreground" />} title="Belum ada ujian" />}
-            {exams.map((exam) => (
-              <div key={exam.id} className="bg-card rounded-xl p-3 border border-border">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold category-ujian px-2 py-0.5 rounded-full">
-                    {exam.exam_type.replace('_', ' ')}
-                  </span>
-                  <span className={cn(
-                    'text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1',
-                    (exam.result === 'mumtaz' || exam.result === 'jayyid_jiddan' || exam.result === 'jayyid_jiddan_plus') && 'bg-success/10 text-success',
-                    exam.result === 'rosib' && 'bg-destructive/10 text-destructive',
-                    (exam.result === 'jayyid' || exam.result === 'jayyid_plus' || exam.result === 'maqbul') && 'bg-warning/10 text-warning',
-                  )}>
-                    {(exam.result === 'mumtaz' || exam.result === 'jayyid_jiddan' || exam.result === 'jayyid_jiddan_plus') && <CheckCircle2 className="w-3 h-3" />}
-                    {exam.result === 'rosib' && <XCircle className="w-3 h-3" />}
-                    {(exam.result === 'jayyid' || exam.result === 'jayyid_plus' || exam.result === 'maqbul') && <Clock className="w-3 h-3" />}
-                    {exam.result.replace(/_/g, ' ').replace('plus', '+').toUpperCase()}
-                  </span>
-                </div>
-                <p className="text-sm font-semibold text-foreground mt-1">Juz Part {exam.juz_part}</p>
-                <p className="text-xs text-muted-foreground">{format(new Date(exam.created_at), 'd MMM yyyy', { locale: idLocale })}</p>
               </div>
             ))}
           </>
