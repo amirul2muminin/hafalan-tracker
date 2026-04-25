@@ -10,6 +10,11 @@ interface StagnantStudent {
   todayPosition: { juz: number; page: number; line: number } | null;
 }
 
+interface TopProgressStudent {
+  student: Student;
+  progress: number;
+}
+
 export function useHomePage() {
   const students = useAppStore((s) => s.students);
   const hafalanBaruLogs = useAppStore((s) => s.hafalanBaruLogs);
@@ -21,6 +26,7 @@ export function useHomePage() {
   const todayHafalanLogs = useMemo(() => hafalanBaruLogs.filter((l) => l.created_at.startsWith(today)), [hafalanBaruLogs, today]);
   const yesterdayHafalanLogs = useMemo(() => hafalanBaruLogs.filter((l) => l.created_at.startsWith(yesterday)), [hafalanBaruLogs, yesterday]);
   const todayMurojaahLogs = useMemo(() => murojaahLogs.filter((l) => l.created_at.startsWith(today)), [murojaahLogs, today]);
+  const yesterdayMurojaahLogs = useMemo(() => murojaahLogs.filter((l) => l.created_at.startsWith(yesterday)), [murojaahLogs, yesterday]);
 
   // Students who didn't add hafalan today
   const belumHafalan = useMemo(() => {
@@ -60,7 +66,7 @@ export function useHomePage() {
   };
 
   const topHafalan = useMemo(() => {
-    const result: { student: Student; progress: number }[] = [];
+    const result: TopProgressStudent[] = [];
 
     for (const student of students) {
       const yesterdayLogs = yesterdayHafalanLogs.filter((l) => l.student_id === student.id);
@@ -74,12 +80,10 @@ export function useHomePage() {
       let progress = 0;
 
       if (yesterdayPos && todayPos) {
-        // ✅ kondisi ideal → pakai selisih posisi
         progress =
           positionToAbsoluteLine(todayPos) -
           positionToAbsoluteLine(yesterdayPos);
       } else {
-        // ✅ fallback → pakai total_lines hari ini
         progress = todayLogs.reduce((sum, l) => sum + (l.total_lines ?? 0), 0);
       }
 
@@ -92,6 +96,52 @@ export function useHomePage() {
       .sort((a, b) => b.progress - a.progress)
       .slice(0, 3);
   }, [students, yesterdayHafalanLogs, todayHafalanLogs]);
+
+  // Top Murojaah: progress based on total_pages increased from yesterday
+  const topMurojaah = useMemo(() => {
+    const result: TopProgressStudent[] = [];
+
+    for (const student of students) {
+      const yesterdayLogs = yesterdayMurojaahLogs.filter((l) => l.student_id === student.id);
+      const todayLogs = todayMurojaahLogs.filter((l) => l.student_id === student.id);
+
+      if (todayLogs.length === 0) continue;
+
+      const yesterdayPages = yesterdayLogs.reduce((sum, l) => sum + (l.total_pages ?? 0), 0);
+      const todayPages = todayLogs.reduce((sum, l) => sum + (l.total_pages ?? 0), 0);
+      const progress = todayPages - yesterdayPages;
+
+      if (progress > 0) {
+        result.push({ student, progress });
+      }
+    }
+
+    return result
+      .sort((a, b) => b.progress - a.progress)
+      .slice(0, 3);
+  }, [students, yesterdayMurojaahLogs, todayMurojaahLogs]);
+
+  // Stagnant Murojaah: students who had murojaah yesterday but no progress today
+  const stagnantMurojaah = useMemo(() => {
+    const result: TopProgressStudent[] = [];
+
+    for (const student of students) {
+      const yesterdayLogs = yesterdayMurojaahLogs.filter((l) => l.student_id === student.id);
+      const todayLogs = todayMurojaahLogs.filter((l) => l.student_id === student.id);
+
+      if (yesterdayLogs.length === 0) continue;
+
+      const yesterdayPages = yesterdayLogs.reduce((sum, l) => sum + (l.total_pages ?? 0), 0);
+      const todayPages = todayLogs.reduce((sum, l) => sum + (l.total_pages ?? 0), 0);
+
+      // stagnant if no new pages today (progress <= 0)
+      if (todayPages <= yesterdayPages) {
+        result.push({ student, progress: todayPages });
+      }
+    }
+
+    return result;
+  }, [students, yesterdayMurojaahLogs, todayMurojaahLogs]);
 
 
 
@@ -136,7 +186,9 @@ export function useHomePage() {
     belumHafalan,
     belumMurojaah,
     topHafalan,
+    topMurojaah,
     stagnant,
+    stagnantMurojaah,
     todayHafalanCount: todayHafalanLogs.length,
     todayMurojaahCount: todayMurojaahLogs.length,
   };
