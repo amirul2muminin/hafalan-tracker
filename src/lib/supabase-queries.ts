@@ -23,6 +23,21 @@ export async function insertStudent(student: { name: string }): Promise<Student>
   return data;
 }
 
+export async function updateStudent(
+  id: string,
+  updates: Partial<{ name: string }>
+): Promise<Student> {
+  const { data, error } = await supabase
+    .from('students')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteStudent(id: string): Promise<void> {
   const { error } = await supabase.from('students').delete().eq('id', id);
   if (error) throw error;
@@ -57,6 +72,32 @@ export async function insertHafalanBaruLog(log: Omit<HafalanBaruLog, 'id' | 'cre
   return data;
 }
 
+export async function updateHafalanBaruLog(
+  id: string,
+  updates: Partial<Omit<HafalanBaruLog, 'id' | 'created_at'>>
+): Promise<HafalanBaruLog> {
+  const { data, error } = await supabase
+    .from('hafalan_baru_logs')
+    .update(updates as any)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteHafalanBaruLog(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('hafalan_baru_logs')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+
+
 
 // Persiapan Ujian Logs
 export async function fetchPersiapanUjianLogs(
@@ -85,6 +126,30 @@ export async function insertPersiapanUjianLog(log: Omit<PersiapanUjianLog, 'id' 
   const { data, error } = await supabase.from('persiapan_ujian_logs').insert(log as any).select().single();
   if (error) throw error;
   return data;
+}
+
+export async function updatePersiapanUjianLog(
+  id: string,
+  updates: Partial<Omit<PersiapanUjianLog, 'id' | 'created_at'>>
+): Promise<PersiapanUjianLog> {
+  const { data, error } = await supabase
+    .from('persiapan_ujian_logs')
+    .update(updates as any)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deletePersiapanUjianLog(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('persiapan_ujian_logs')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
 }
 
 // Ujian Logs
@@ -116,6 +181,30 @@ export async function insertUjianLog(log: Omit<UjianLog, 'id' | 'created_at'>): 
   return data;
 }
 
+export async function updateUjianLog(
+  id: string,
+  updates: Partial<Omit<UjianLog, 'id' | 'created_at'>>
+): Promise<UjianLog> {
+  const { data, error } = await supabase
+    .from('ujian_logs')
+    .update(updates as any)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteUjianLog(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('ujian_logs')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
 // Murojaah Logs
 export async function fetchMurojaahLogs(
   studentId?: string,
@@ -143,5 +232,29 @@ export async function insertMurojaahLog(log: Omit<MurojaahLog, 'id' | 'created_a
   const { data, error } = await supabase.from('murojaah_logs').insert(log as any).select().single();
   if (error) throw error;
   return data;
+}
+
+export async function updateMurojaahLog(
+  id: string,
+  updates: Partial<Omit<MurojaahLog, 'id' | 'created_at'>>
+): Promise<MurojaahLog> {
+  const { data, error } = await supabase
+    .from('murojaah_logs')
+    .update(updates as any)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteMurojaahLog(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('murojaah_logs')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
 }
 
