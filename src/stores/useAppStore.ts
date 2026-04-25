@@ -20,11 +20,20 @@ interface AppState {
 
   // Mutations
   addStudent: (name: string) => Promise<void>;
+  updateStudent: (id: string, updates: Partial<Student>) => Promise<void>;
   removeStudent: (id: string) => Promise<void>;
   addHafalanBaruLog: (log: Omit<HafalanBaruLog, 'id' | 'created_at'>) => Promise<void>;
+  updateHafalanBaruLog: (id: string, updates: Partial<HafalanBaruLog>) => Promise<void>;
+  removeHafalanBaruLog: (id: string) => Promise<void>;
   addPersiapanUjianLog: (log: Omit<PersiapanUjianLog, 'id' | 'created_at'>) => Promise<void>;
+  updatePersiapanUjianLog: (id: string, updates: Partial<PersiapanUjianLog>) => Promise<void>;
+  removePersiapanUjianLog: (id: string) => Promise<void>;
   addUjianLog: (log: Omit<UjianLog, 'id' | 'created_at'>) => Promise<void>;
+  updateUjianLog: (id: string, updates: Partial<UjianLog>) => Promise<void>;
+  removeUjianLog: (id: string) => Promise<void>;
   addMurojaahLog: (log: Omit<MurojaahLog, 'id' | 'created_at'>) => Promise<void>;
+  updateMurojaahLog: (id: string, updates: Partial<MurojaahLog>) => Promise<void>;
+  removeMurojaahLog: (id: string) => Promise<void>;
 
 
   // Selectors
@@ -79,11 +88,11 @@ export const useAppStore = create<AppState>()(
           ]);
 
           set((s) => ({
-            students: mergeById(s.students, students),
-            hafalanBaruLogs: mergeById(s.hafalanBaruLogs, hafalanBaruLogs),
-            persiapanUjianLogs: mergeById(s.persiapanUjianLogs, persiapanUjianLogs),
-            ujianLogs: mergeById(s.ujianLogs, ujianLogs),
-            murojaahLogs: mergeById(s.murojaahLogs, murojaahLogs),
+            students: sortStudents(mergeById(s.students, students)),
+            hafalanBaruLogs: sortLogs(mergeById(s.hafalanBaruLogs, hafalanBaruLogs)),
+            persiapanUjianLogs: sortLogs(mergeById(s.persiapanUjianLogs, persiapanUjianLogs)),
+            ujianLogs: sortLogs(mergeById(s.ujianLogs, ujianLogs)),
+            murojaahLogs: sortLogs(mergeById(s.murojaahLogs, murojaahLogs)),
             lastUpdatedAt: newLast || s.lastUpdatedAt,
             loading: false,
           }));
@@ -124,16 +133,26 @@ export const useAppStore = create<AppState>()(
         const student = await api.insertStudent({ name });
 
         set((s) => ({
-          students: mergeById(s.students, [student]),
+          students: sortStudents(mergeById(s.students, [student])),
           lastUpdatedAt: student.updated_at || s.lastUpdatedAt,
         }));
       },
 
-      removeStudent: async (id: string) => {
-        await api.deleteStudent(id);
+      updateStudent: async (id, updates) => {
+        const updated = await api.updateStudent(id, updates);
 
         set((s) => ({
-          students: s.students.filter((st) => st.id !== id),
+          students: sortStudents(mergeById(s.students, [updated])),
+          lastUpdatedAt: updated.updated_at || s.lastUpdatedAt,
+        }));
+      },
+
+      removeStudent: async (id: string) => {
+        const deleted = await api.deleteStudent(id); // sudah soft delete
+
+        set((s) => ({
+          students: sortStudents(mergeById(s.students, [deleted])),
+          lastUpdatedAt: deleted.updated_at || s.lastUpdatedAt,
         }));
       },
 
@@ -141,8 +160,27 @@ export const useAppStore = create<AppState>()(
         const created = await api.insertHafalanBaruLog(log);
 
         set((s) => ({
-          hafalanBaruLogs: mergeById(s.hafalanBaruLogs, [created]),
+          hafalanBaruLogs: sortLogs(
+            mergeById(s.hafalanBaruLogs, [created]),
+          ),
           lastUpdatedAt: created.updated_at || s.lastUpdatedAt,
+        }));
+      },
+      updateHafalanBaruLog: async (id, updates) => {
+        const updated = await api.updateHafalanBaruLog(id, updates);
+
+        set((s) => ({
+          hafalanBaruLogs: sortLogs(mergeById(s.hafalanBaruLogs, [updated])),
+          lastUpdatedAt: updated.updated_at || s.lastUpdatedAt,
+        }));
+      },
+
+      removeHafalanBaruLog: async (id: string) => {
+        const deleted = await api.deleteHafalanBaruLog(id);
+
+        set((s) => ({
+          hafalanBaruLogs: sortLogs(mergeById(s.hafalanBaruLogs, [deleted])),
+          lastUpdatedAt: deleted.updated_at || s.lastUpdatedAt,
         }));
       },
 
@@ -150,8 +188,25 @@ export const useAppStore = create<AppState>()(
         const created = await api.insertPersiapanUjianLog(log);
 
         set((s) => ({
-          persiapanUjianLogs: mergeById(s.persiapanUjianLogs, [created]),
+          persiapanUjianLogs: sortLogs(mergeById(s.persiapanUjianLogs, [created])),
           lastUpdatedAt: created.updated_at || s.lastUpdatedAt,
+        }));
+      },
+      updatePersiapanUjianLog: async (id, updates) => {
+        const updated = await api.updatePersiapanUjianLog(id, updates);
+
+        set((s) => ({
+          persiapanUjianLogs: sortLogs(mergeById(s.persiapanUjianLogs, [updated])),
+          lastUpdatedAt: updated.updated_at || s.lastUpdatedAt,
+        }));
+      },
+
+      removePersiapanUjianLog: async (id: string) => {
+        const deleted = await api.deletePersiapanUjianLog(id);
+
+        set((s) => ({
+          persiapanUjianLogs: sortLogs(mergeById(s.persiapanUjianLogs, [deleted])),
+          lastUpdatedAt: deleted.updated_at || s.lastUpdatedAt,
         }));
       },
 
@@ -159,8 +214,26 @@ export const useAppStore = create<AppState>()(
         const created = await api.insertUjianLog(log);
 
         set((s) => ({
-          ujianLogs: mergeById(s.ujianLogs, [created]),
+          ujianLogs: sortLogs(mergeById(s.ujianLogs, [created])),
           lastUpdatedAt: created.updated_at || s.lastUpdatedAt,
+        }));
+      },
+
+      updateUjianLog: async (id, updates) => {
+        const updated = await api.updateUjianLog(id, updates);
+
+        set((s) => ({
+          ujianLogs: sortLogs(mergeById(s.ujianLogs, [updated])),
+          lastUpdatedAt: updated.updated_at || s.lastUpdatedAt,
+        }));
+      },
+
+      removeUjianLog: async (id: string) => {
+        const deleted = await api.deleteUjianLog(id);
+
+        set((s) => ({
+          ujianLogs: sortLogs(mergeById(s.ujianLogs, [deleted])),
+          lastUpdatedAt: deleted.updated_at || s.lastUpdatedAt,
         }));
       },
 
@@ -168,8 +241,25 @@ export const useAppStore = create<AppState>()(
         const created = await api.insertMurojaahLog(log);
 
         set((s) => ({
-          murojaahLogs: mergeById(s.murojaahLogs, [created]),
+          murojaahLogs: sortLogs(mergeById(s.murojaahLogs, [created])),
           lastUpdatedAt: created.updated_at || s.lastUpdatedAt,
+        }));
+      },
+      updateMurojaahLog: async (id, updates) => {
+        const updated = await api.updateMurojaahLog(id, updates);
+
+        set((s) => ({
+          murojaahLogs: sortLogs(mergeById(s.murojaahLogs, [updated])),
+          lastUpdatedAt: updated.updated_at || s.lastUpdatedAt,
+        }));
+      },
+
+      removeMurojaahLog: async (id: string) => {
+        const deleted = await api.deleteMurojaahLog(id);
+
+        set((s) => ({
+          murojaahLogs: sortLogs(mergeById(s.murojaahLogs, [deleted])),
+          lastUpdatedAt: deleted.updated_at || s.lastUpdatedAt,
         }));
       },
 
@@ -248,3 +338,11 @@ const getLatestTimestamp = (arrays: any[][]) => {
 
   return latest;
 };
+
+const sortStudents = (arr: Student[]) =>
+  [...arr].sort((a, b) => a.name.localeCompare(b.name));
+
+const sortLogs = <T extends { created_at: string }>(arr: T[]) =>
+  [...arr].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at)
+  );
