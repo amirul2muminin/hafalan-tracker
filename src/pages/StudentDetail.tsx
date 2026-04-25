@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import EmptyState from '@/components/EmptyState';
-import { BookOpen, RefreshCw, ClipboardCheck, Target, Plus, CheckCircle2, XCircle, Clock, BarChart3, ChevronRight } from 'lucide-react';
+import { BookOpen, RefreshCw, ClipboardCheck, Target, Plus, CheckCircle2, XCircle, Clock, BarChart3, ChevronRight, IdCard, IdCardLanyard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -39,10 +39,16 @@ const StudentDetail = () => {
     <div className="min-h-screen bg-background pb-20">
       <PageHeader title={student.name} subtitle={`${progress.total_lines} baris · ${progress.total_pages} hal · ${progress.total_juz} juz`} back
         action={
-          <button onClick={() => navigate(`/students/${student.id}/analytics`)}
-            className="p-2 rounded-lg hover:bg-muted transition-colors">
-            <BarChart3 className="w-5 h-5 text-primary" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={() => navigate(`/students/${student.id}/analytics`)}
+              className="p-2 rounded-lg hover:bg-muted transition-colors">
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </button>
+            <button onClick={() => navigate(`/students/${student.id}/profile`)}
+              className="p-2 rounded-lg hover:bg-muted transition-colors">
+              <IdCardLanyard className="w-5 h-5 text-primary" />
+            </button>
+          </div>
         }
       />
 
