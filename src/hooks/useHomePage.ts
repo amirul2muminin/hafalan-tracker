@@ -1,0 +1,143 @@
+import { useMemo } from 'react';
+import { useAppStore } from '@/stores/useAppStore';
+import type { Student } from '@/types';
+
+
+
+interface StagnantStudent {
+  student: Student;
+  yesterdayPosition: { juz: number; page: number; line: number } | null;
+  todayPosition: { juz: number; page: number; line: number } | null;
+}
+
+export function useHomePage() {
+  const students = useAppStore((s) => s.students);
+  const hafalanBaruLogs = useAppStore((s) => s.hafalanBaruLogs);
+  const murojaahLogs = useAppStore((s) => s.murojaahLogs);
+
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+  const todayHafalanLogs = useMemo(() => hafalanBaruLogs.filter((l) => l.created_at.startsWith(today)), [hafalanBaruLogs, today]);
+  const yesterdayHafalanLogs = useMemo(() => hafalanBaruLogs.filter((l) => l.created_at.startsWith(yesterday)), [hafalanBaruLogs, yesterday]);
+  const todayMurojaahLogs = useMemo(() => murojaahLogs.filter((l) => l.created_at.startsWith(today)), [murojaahLogs, today]);
+
+  // Students who didn't add hafalan today
+  const belumHafalan = useMemo(() => {
+    const studentsWithHafalanToday = new Set(todayHafalanLogs.map((l) => l.student_id));
+    return students.filter((s) => !studentsWithHafalanToday.has(s.id));
+  }, [students, todayHafalanLogs]);
+
+  // Students who didn't add murojaah today
+  const belumMurojaah = useMemo(() => {
+    const studentsWithMurojaahToday = new Set(todayMurojaahLogs.map((l) => l.student_id));
+    return students.filter((s) => !studentsWithMurojaahToday.has(s.id));
+  }, [students, todayMurojaahLogs]);
+
+  // Helper: convert position to absolute line
+  const positionToAbsoluteLine = (pos: { juz: number; page: number; line: number }) => {
+    const LINES_PER_PAGE = 15; // adjust kalau beda
+    const PAGES_PER_JUZ = 20; // rata-rata Qur'an Madinah
+
+    return (
+      pos.juz * PAGES_PER_JUZ * LINES_PER_PAGE +
+      pos.page * LINES_PER_PAGE +
+      pos.line
+    );
+  };
+
+  // Helper: get last hafalan position (highest to_page:to_line)
+  const getLastPosition = (logs: typeof hafalanBaruLogs): { juz: number; page: number; line: number } | null => {
+    if (logs.length === 0) return null;
+    let best: typeof logs[0] | null = null;
+    for (const log of logs) {
+      if (!best) { best = log; continue; }
+      if (log.juz_id > best.juz_id) { best = log; continue; }
+      if (log.juz_id === best.juz_id && log.to_page > best.to_page) { best = log; continue; }
+      if (log.juz_id === best.juz_id && log.to_page === best.to_page && log.to_line > best.to_line) { best = log; }
+    }
+    return best ? { juz: best.juz_id, page: best.to_page, line: best.to_line } : null;
+  };
+
+  const topHafalan = useMemo(() => {
+    const result: { student: Student; progress: number }[] = [];
+
+    for (const student of students) {
+      const yesterdayLogs = yesterdayHafalanLogs.filter((l) => l.student_id === student.id);
+      const todayLogs = todayHafalanLogs.filter((l) => l.student_id === student.id);
+
+      if (todayLogs.length === 0) continue;
+
+      const yesterdayPos = getLastPosition(yesterdayLogs);
+      const todayPos = getLastPosition(todayLogs);
+
+      let progress = 0;
+
+      if (yesterdayPos && todayPos) {
+        // ✅ kondisi ideal → pakai selisih posisi
+        progress =
+          positionToAbsoluteLine(todayPos) -
+          positionToAbsoluteLine(yesterdayPos);
+      } else {
+        // ✅ fallback → pakai total_lines hari ini
+        progress = todayLogs.reduce((sum, l) => sum + (l.total_lines ?? 0), 0);
+      }
+
+      if (progress > 0) {
+        result.push({ student, progress });
+      }
+    }
+
+    return result
+      .sort((a, b) => b.progress - a.progress)
+      .slice(0, 3);
+  }, [students, yesterdayHafalanLogs, todayHafalanLogs]);
+
+
+
+  // Stagnant: students who had hafalan yesterday but position didn't advance today
+  const stagnant = useMemo((): StagnantStudent[] => {
+    const result: StagnantStudent[] = [];
+
+    for (const student of students) {
+      const studentYesterdayLogs = yesterdayHafalanLogs.filter((l) => l.student_id === student.id);
+      const studentTodayLogs = todayHafalanLogs.filter((l) => l.student_id === student.id);
+
+      if (studentYesterdayLogs.length === 0) continue; // must have had hafalan yesterday
+
+      const yesterdayPos = getLastPosition(studentYesterdayLogs);
+      const todayPos = getLastPosition(studentTodayLogs);
+
+      // Stagnant if position didn't advance (same or regressed)
+      let isStagnant = false;
+      if (!todayPos) {
+        // Had yesterday but no new hafalan today
+        isStagnant = true;
+      } else if (yesterdayPos) {
+        // Compare positions
+        if (
+          todayPos.juz < yesterdayPos.juz ||
+          (todayPos.juz === yesterdayPos.juz && todayPos.page < yesterdayPos.page) ||
+          (todayPos.juz === yesterdayPos.juz && todayPos.page === yesterdayPos.page && todayPos.line <= yesterdayPos.line)
+        ) {
+          isStagnant = true;
+        }
+      }
+
+      if (isStagnant) {
+        result.push({ student, yesterdayPosition: yesterdayPos, todayPosition: todayPos });
+      }
+    }
+
+    return result;
+  }, [students, yesterdayHafalanLogs, todayHafalanLogs]);
+
+  return {
+    belumHafalan,
+    belumMurojaah,
+    topHafalan,
+    stagnant,
+    todayHafalanCount: todayHafalanLogs.length,
+    todayMurojaahCount: todayMurojaahLogs.length,
+  };
+}
