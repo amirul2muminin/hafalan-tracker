@@ -15,13 +15,12 @@ const tabs = [
   { key: 'hafalan', label: 'Hafalan', icon: BookOpen },
   { key: 'murojaah', label: 'Murojaah', icon: RefreshCw },
   { key: 'ujian', label: 'Ujian', icon: ClipboardCheck },
-  { key: 'target', label: 'Target', icon: Target },
 ] as const;
 
 const StudentDetail = () => {
   const { studentId } = useParams();
   const navigate = useNavigate();
-  const { students, getStudentHafalanLogs, getStudentUjianLogs, getStudentMurojaahLogs, getStudentTargets, getStudentProgress, murojaahCycles, fetchStudentData } = useAppStore();
+  const { students, getStudentHafalanLogs, getStudentUjianLogs, getStudentMurojaahLogs, getStudentProgress, fetchStudentData } = useAppStore();
   const [activeTab, setActiveTab] = useState<string>('hafalan');
 
   useEffect(() => {
@@ -34,12 +33,7 @@ const StudentDetail = () => {
   const hafalanLogs = getStudentHafalanLogs(student.id);
   const murojaahLogs = getStudentMurojaahLogs(student.id);
   const exams = getStudentUjianLogs(student.id);
-  const targets = getStudentTargets(student.id);
   const progress = getStudentProgress(student.id);
-  const cycle = murojaahCycles[student.id];
-
-  const mainTarget = targets[0];
-  const pct = mainTarget ? Math.min(100, Math.round(((mainTarget.current_value || progress.total_juz) / mainTarget.target_value) * 100)) : 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -52,21 +46,7 @@ const StudentDetail = () => {
         }
       />
 
-      <div className="px-4 pt-3 pb-2">
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted-foreground">Progress Target</span>
-            <span className="text-sm font-bold text-primary">{pct}%</span>
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
-          </div>
-          <div className="flex justify-between mt-2">
-            <span className="text-[10px] text-muted-foreground">{progress.total_juz} juz</span>
-            <span className="text-[10px] text-muted-foreground">Target: {mainTarget?.target_value || '-'} {mainTarget?.target_type || 'juz'}</span>
-          </div>
-        </div>
-      </div>
+
 
       <div className="px-4 pt-2">
         <div className="flex gap-1 bg-muted rounded-xl p-1">
@@ -116,13 +96,7 @@ const StudentDetail = () => {
 
         {activeTab === 'murojaah' && (
           <>
-            <div className="bg-murojaah-light rounded-xl p-4 mb-2">
-              <p className="text-xs font-semibold text-murojaah-foreground">Siklus Murojaah</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-bold text-foreground">{cycle?.current_pages || 3}</span>
-                <span className="text-xs text-muted-foreground">halaman / hari {cycle?.current_day || 0}</span>
-              </div>
-            </div>
+
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs text-muted-foreground">{murojaahLogs.length} catatan</span>
               <Button size="sm" onClick={() => navigate(`/add/murojaah?student=${student.id}`)}>
@@ -177,49 +151,7 @@ const StudentDetail = () => {
           </>
         )}
 
-        {activeTab === 'target' && (
-          <>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-muted-foreground">{targets.length} target</span>
-              <Button size="sm" onClick={() => navigate(`/add/target?student=${student.id}`)}>
-                <Plus className="w-3.5 h-3.5 mr-1" /> Target
-              </Button>
-            </div>
-            {targets.length === 0 && <EmptyState icon={<Target className="w-5 h-5 text-muted-foreground" />} title="Belum ada target" />}
-            {targets.map((target) => {
-              const current = target.current_value || (
-                target.target_type === 'juz' ? progress.total_juz :
-                target.target_type === 'page' ? progress.total_pages :
-                progress.total_lines
-              );
-              const tPct = Math.min(100, Math.round((current / target.target_value) * 100));
-              const isLate = new Date(target.deadline) < new Date() && tPct < 100;
-              const isDone = tPct >= 100;
-              return (
-                <div key={target.id} className="bg-card rounded-xl p-4 border border-border">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-foreground">{target.target_value} {target.target_type === 'page' ? 'halaman' : target.target_type === 'line' ? 'baris' : target.target_type}</span>
-                    <span className={cn(
-                      'text-[10px] font-semibold px-2 py-0.5 rounded-full',
-                      isDone && 'bg-success/10 text-success',
-                      isLate && 'bg-destructive/10 text-destructive',
-                      !isDone && !isLate && 'bg-primary/10 text-primary',
-                    )}>
-                      {isDone ? 'Selesai' : isLate ? 'Terlambat' : 'On Track'}
-                    </span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden mb-1">
-                    <div className={cn('h-full rounded-full', isDone ? 'bg-success' : isLate ? 'bg-destructive' : 'bg-primary')} style={{ width: `${tPct}%` }} />
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[10px] text-muted-foreground">{current}/{target.target_value} · {tPct}%</span>
-                    <span className="text-[10px] text-muted-foreground">Deadline: {format(new Date(target.deadline), 'd MMM yyyy', { locale: idLocale })}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </>
-        )}
+
       </div>
       <BottomNav />
     </div>

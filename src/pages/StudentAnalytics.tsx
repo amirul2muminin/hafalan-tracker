@@ -7,18 +7,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Tooltip } from 'recharts';
 import {
   calcHafalanMetrics, calcMurojaahMetrics, calcExamMetrics,
-  calcBalance, getLast7DaysChart, getWeeklyChart,
-  calcTargetMetrics,
+  calcBalance, getLast7DaysChart, getWeeklyChart
 } from '@/lib/analytics-utils';
 import { TrendIcon, GrowthBadge, MetricCard, PrepBenchmarkBadge, BalanceBadge } from '@/components/analytics/shared';
-import { Flame, Target, BookOpen, RefreshCw, GraduationCap, BarChart3 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Flame, BookOpen, RefreshCw, GraduationCap, BarChart3, Target } from 'lucide-react';
 
 const COLORS = ['hsl(213,94%,56%)', 'hsl(152,69%,41%)', 'hsl(25,95%,53%)', 'hsl(199,89%,48%)'];
 
 const StudentAnalytics = () => {
   const { studentId } = useParams();
-  const { students, getStudentHafalanLogs, getStudentMurojaahLogs, getStudentPersiapanLogs, getStudentUjianLogs, getStudentTargets, getStudentProgress, fetchStudentData } = useAppStore();
+  const { students, getStudentHafalanLogs, getStudentMurojaahLogs, getStudentPersiapanLogs, getStudentUjianLogs, getStudentProgress, fetchStudentData } = useAppStore();
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -32,14 +30,12 @@ const StudentAnalytics = () => {
   const mLogs = getStudentMurojaahLogs(student.id);
   const pLogs = getStudentPersiapanLogs(student.id);
   const uLogs = getStudentUjianLogs(student.id);
-  const targets = getStudentTargets(student.id);
   const progress = getStudentProgress(student.id);
 
   const hafalan = useMemo(() => calcHafalanMetrics(hLogs, student.id), [hLogs, student.id]);
   const murojaah = useMemo(() => calcMurojaahMetrics(mLogs, student.id), [mLogs, student.id]);
   const exam = useMemo(() => calcExamMetrics(pLogs, uLogs, student.id), [pLogs, uLogs, student.id]);
   const balance = useMemo(() => calcBalance(hLogs, mLogs, student.id), [hLogs, mLogs, student.id]);
-  const targetMetrics = useMemo(() => calcTargetMetrics(targets, progress), [targets, progress]);
   const last7 = useMemo(() => getLast7DaysChart(hLogs, mLogs), [hLogs, mLogs]);
   const weekly = useMemo(() => getWeeklyChart(hLogs, mLogs), [hLogs, mLogs]);
 
@@ -57,12 +53,11 @@ const StudentAnalytics = () => {
 
       <div className="px-4 pt-2">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-5 h-9 mb-4">
+          <TabsList className="w-full grid grid-cols-4 h-9 mb-4">
             <TabsTrigger value="overview" className="text-[10px] px-1">Ringkasan</TabsTrigger>
             <TabsTrigger value="hafalan" className="text-[10px] px-1">Hafalan</TabsTrigger>
             <TabsTrigger value="murojaah" className="text-[10px] px-1">Murojaah</TabsTrigger>
             <TabsTrigger value="ujian" className="text-[10px] px-1">Ujian</TabsTrigger>
-            <TabsTrigger value="target" className="text-[10px] px-1">Target</TabsTrigger>
           </TabsList>
 
           {/* ── OVERVIEW ── */}
@@ -337,44 +332,6 @@ const StudentAnalytics = () => {
             </div>
           </TabsContent>
 
-          {/* ── TARGET ── */}
-          <TabsContent value="target" className="space-y-3 mt-0">
-            {targetMetrics.length === 0 ? (
-              <div className="bg-card rounded-xl p-8 border border-border text-center">
-                <Target className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm font-bold text-foreground">Belum ada target</p>
-                <p className="text-xs text-muted-foreground mt-1">Target dapat ditambahkan dari halaman detail murid</p>
-              </div>
-            ) : (
-              targetMetrics.map((t) => (
-                <div key={t.id} className="bg-card rounded-xl p-4 border border-border">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-foreground">
-                      {t.targetValue} {t.targetType === 'page' ? 'halaman' : t.targetType === 'line' ? 'baris' : 'juz'}
-                    </span>
-                    <span className={cn(
-                      'text-[10px] font-semibold px-2 py-0.5 rounded-full',
-                      t.status === 'completed' && 'bg-success/10 text-success',
-                      t.status === 'late' && 'bg-destructive/10 text-destructive',
-                      t.status === 'on-track' && 'bg-primary/10 text-primary',
-                    )}>
-                      {t.status === 'completed' ? 'Selesai' : t.status === 'late' ? 'Terlambat' : 'On Track'}
-                    </span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden mb-1">
-                    <div className={cn(
-                      'h-full rounded-full transition-all',
-                      t.status === 'completed' ? 'bg-success' : t.status === 'late' ? 'bg-destructive' : 'bg-primary',
-                    )} style={{ width: `${t.progressPct}%` }} />
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[10px] text-muted-foreground">{t.currentValue}/{t.targetValue} · {t.progressPct}%</span>
-                    <span className="text-[10px] text-muted-foreground">Deadline: {new Date(t.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </TabsContent>
         </Tabs>
       </div>
 

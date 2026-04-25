@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 
 const StudentList = () => {
   const navigate = useNavigate();
-  const { students, getStudentProgress, getStudentTargets, fetchAll, addStudent } = useAppStore();
+  const { students, getStudentProgress, fetchAll, addStudent } = useAppStore();
   const [search, setSearch] = useState('');
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -39,9 +39,6 @@ const StudentList = () => {
         <div className="space-y-2">
           {filtered.map((student) => {
             const progress = getStudentProgress(student.id);
-            const targets = getStudentTargets(student.id);
-            const mainTarget = targets[0];
-            const pct = mainTarget ? Math.min(100, Math.round(((mainTarget.current_value || progress.total_juz) / mainTarget.target_value) * 100)) : 0;
 
             return (
               <button key={student.id} onClick={() => navigate(`/students/${student.id}`)}
@@ -52,14 +49,7 @@ const StudentList = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{student.name}</p>
                   <p className="text-xs text-muted-foreground">{progress.total_lines} baris · {progress.total_pages} hal · {progress.total_juz} juz</p>
-                  {mainTarget && (
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="text-[10px] font-semibold text-muted-foreground">{pct}%</span>
-                    </div>
-                  )}
+
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </button>

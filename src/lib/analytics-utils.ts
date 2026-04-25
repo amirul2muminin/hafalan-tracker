@@ -1,4 +1,4 @@
-import type { HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, Student, TargetHafalan, StudentProgress } from '@/types';
+import type { HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, Student, StudentProgress } from '@/types';
 import { linesToPages, pagesToJuz } from './juz-mapping';
 
 // ─── Time helpers ────────────────────────────────────────────
@@ -444,30 +444,3 @@ export function calcClassSummary(
   };
 }
 
-export interface TargetMetrics {
-  id: string;
-  targetType: TargetHafalan['target_type'];
-  targetValue: number;
-  currentValue: number;
-  progressPct: number;
-  deadline: string;
-  status: 'completed' | 'on-track' | 'late';
-}
-
-export function calcTargetMetrics(
-  targets: TargetHafalan[],
-  progress: StudentProgress,
-): TargetMetrics[] {
-  return targets.map((t) => {
-    const currentValue = t.current_value ?? (
-      t.target_type === 'juz' ? progress.total_juz
-        : t.target_type === 'page' ? progress.total_pages
-        : progress.total_lines
-    );
-    const progressPct = Math.min(100, Math.round((currentValue / t.target_value) * 100));
-    const deadline = new Date(t.deadline);
-    const isLate = deadline < new Date() && progressPct < 100;
-    const status: TargetMetrics['status'] = progressPct >= 100 ? 'completed' : isLate ? 'late' : 'on-track';
-    return { id: t.id, targetType: t.target_type, targetValue: t.target_value, currentValue, progressPct, deadline: t.deadline, status };
-  });
-}

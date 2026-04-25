@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Student, HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, TargetHafalan, MurojaahCycle, StudentProgress } from '@/types';
+import type { Student, HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, StudentProgress } from '@/types';
 import { linesToPages, pagesToJuz } from '@/lib/juz-mapping';
 import * as api from '@/lib/supabase-queries';
 
@@ -11,8 +11,7 @@ interface AppState {
   persiapanUjianLogs: PersiapanUjianLog[];
   ujianLogs: UjianLog[];
   murojaahLogs: MurojaahLog[];
-  targets: TargetHafalan[];
-  murojaahCycles: Record<string, MurojaahCycle>;
+
   loading: boolean;
 
   // Fetch
@@ -26,15 +25,14 @@ interface AppState {
   addPersiapanUjianLog: (log: Omit<PersiapanUjianLog, 'id' | 'created_at'>) => Promise<void>;
   addUjianLog: (log: Omit<UjianLog, 'id' | 'created_at'>) => Promise<void>;
   addMurojaahLog: (log: Omit<MurojaahLog, 'id' | 'created_at'>) => Promise<void>;
-  addTarget: (target: Omit<TargetHafalan, 'id' | 'created_at'>) => Promise<void>;
-  updateMurojaahCycle: (studentId: string) => Promise<MurojaahCycle>;
+
 
   // Selectors
   getStudentHafalanLogs: (studentId: string) => HafalanBaruLog[];
   getStudentPersiapanLogs: (studentId: string) => PersiapanUjianLog[];
   getStudentUjianLogs: (studentId: string) => UjianLog[];
   getStudentMurojaahLogs: (studentId: string) => MurojaahLog[];
-  getStudentTargets: (studentId: string) => TargetHafalan[];
+
   getStudentProgress: (studentId: string) => StudentProgress;
   getTodayHafalanLogs: () => HafalanBaruLog[];
 }
@@ -45,22 +43,20 @@ export const useAppStore = create<AppState>()((set, get) => ({
   persiapanUjianLogs: [],
   ujianLogs: [],
   murojaahLogs: [],
-  targets: [],
-  murojaahCycles: {},
+
   loading: false,
 
   fetchAll: async () => {
     set({ loading: true });
     try {
-      const [students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs, murojaahLogs, targets] = await Promise.all([
+      const [students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs, murojaahLogs] = await Promise.all([
         api.fetchStudents(),
         api.fetchHafalanBaruLogs(),
         api.fetchPersiapanUjianLogs(),
         api.fetchUjianLogs(),
         api.fetchMurojaahLogs(),
-        api.fetchTargets(),
       ]);
-      set({ students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs, murojaahLogs, targets, loading: false });
+      set({ students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs, murojaahLogs, loading: false });
     } catch (err) {
       console.error('Failed to fetch data:', err);
       set({ loading: false });
@@ -69,21 +65,17 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   fetchStudentData: async (studentId: string) => {
     try {
-      const [hLogs, pLogs, uLogs, mLogs, targets, cycle] = await Promise.all([
+      const [hLogs, pLogs, uLogs, mLogs] = await Promise.all([
         api.fetchHafalanBaruLogs(studentId),
         api.fetchPersiapanUjianLogs(studentId),
         api.fetchUjianLogs(studentId),
         api.fetchMurojaahLogs(studentId),
-        api.fetchTargets(studentId),
-        api.fetchMurojaahCycle(studentId),
       ]);
       set((s) => ({
         hafalanBaruLogs: [...s.hafalanBaruLogs.filter((l) => l.student_id !== studentId), ...hLogs],
         persiapanUjianLogs: [...s.persiapanUjianLogs.filter((l) => l.student_id !== studentId), ...pLogs],
         ujianLogs: [...s.ujianLogs.filter((l) => l.student_id !== studentId), ...uLogs],
         murojaahLogs: [...s.murojaahLogs.filter((l) => l.student_id !== studentId), ...mLogs],
-        targets: [...s.targets.filter((t) => t.student_id !== studentId), ...targets],
-        murojaahCycles: cycle ? { ...s.murojaahCycles, [studentId]: cycle } : s.murojaahCycles,
       }));
     } catch (err) {
       console.error('Failed to fetch student data:', err);
@@ -120,31 +112,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set((s) => ({ murojaahLogs: [created, ...s.murojaahLogs] }));
   },
 
-  addTarget: async (target) => {
-    const created = await api.insertTarget(target);
-    set((s) => ({ targets: [...s.targets, created] }));
-  },
 
-  updateMurojaahCycle: async (studentId: string) => {
-    const cycles = get().murojaahCycles;
-    const current = cycles[studentId] || { student_id: studentId, current_day: 0, current_pages: 0 };
-    const currentIdx = PAGES_SEQUENCE.indexOf(current.current_pages);
-    const nextIdx = currentIdx >= PAGES_SEQUENCE.length - 1 ? 0 : currentIdx + 1;
-    const updated: Omit<MurojaahCycle, 'id' | 'created_at' | 'updated_at'> = {
-      student_id: studentId,
-      current_day: current.current_day + 1,
-      current_pages: PAGES_SEQUENCE[nextIdx],
-    };
-    const result = await api.upsertMurojaahCycle(updated);
-    set({ murojaahCycles: { ...cycles, [studentId]: result } });
-    return result;
-  },
 
   getStudentHafalanLogs: (studentId) => get().hafalanBaruLogs.filter((l) => l.student_id === studentId),
   getStudentPersiapanLogs: (studentId) => get().persiapanUjianLogs.filter((l) => l.student_id === studentId),
   getStudentUjianLogs: (studentId) => get().ujianLogs.filter((l) => l.student_id === studentId),
   getStudentMurojaahLogs: (studentId) => get().murojaahLogs.filter((l) => l.student_id === studentId),
-  getStudentTargets: (studentId) => get().targets.filter((t) => t.student_id === studentId),
+
 
   getStudentProgress: (studentId) => {
     const logs = get().hafalanBaruLogs.filter((l) => l.student_id === studentId);
