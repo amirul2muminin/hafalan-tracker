@@ -6,27 +6,44 @@ import { useState } from 'react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 const StudentList = () => {
   const navigate = useNavigate();
   const { students, getStudentProgress, fetchAll, addStudent } = useAppStore();
   const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [newName, setNewName] = useState('');
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const filtered = students.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleAddStudent = async () => {
-    const name = prompt('Nama murid baru:');
-    if (name) {
-      try { await addStudent(name); } catch { /* handled */ }
+    if (!newName.trim()) return;
+
+    try {
+      await addStudent(newName);
+      setNewName('');
+      setOpen(false);
+    } catch {
+      // error handling sudah di store
     }
   };
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <PageHeader title="Daftar Murid" subtitle={`${students.length} murid`}
-        action={<Button size="sm" onClick={handleAddStudent}>+ Murid</Button>}
+        action={<Button size="sm" onClick={() => setOpen(true)}>
+          + Murid
+        </Button>}
       />
 
       <div className="px-4 pt-3 space-y-3">
@@ -58,6 +75,33 @@ const StudentList = () => {
         </div>
       </div>
       <BottomNav />
+
+
+      {/* modal */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tambah Murid</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Input
+              placeholder="Nama murid"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Batal
+            </Button>
+            <Button className='mb-2' onClick={handleAddStudent}>
+              Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
