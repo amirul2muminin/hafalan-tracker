@@ -27,7 +27,8 @@ CREATE TABLE public.students (
   name VARCHAR NOT NULL,
   role user_role NOT NULL DEFAULT 'student',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Student progress
@@ -42,6 +43,7 @@ CREATE TABLE public.student_progress (
   last_line INT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  deleted_at TIMESTAMP WITH TIME ZONE,
   UNIQUE(student_id)
 );
 
@@ -58,7 +60,8 @@ CREATE TABLE public.hafalan_baru_logs (
   pages DECIMAL NOT NULL DEFAULT 0,
   note TEXT DEFAULT '',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Persiapan Ujian logs
@@ -70,7 +73,8 @@ CREATE TABLE public.persiapan_ujian_logs (
   juz_part INT NOT NULL,
   note TEXT DEFAULT '',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Ujian logs
@@ -83,7 +87,8 @@ CREATE TABLE public.ujian_logs (
   result exam_result NOT NULL,
   note TEXT DEFAULT '',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Murojaah logs
@@ -94,7 +99,8 @@ CREATE TABLE public.murojaah_logs (
   total_pages INT NOT NULL,
   note TEXT DEFAULT '',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 
