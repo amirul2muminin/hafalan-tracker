@@ -1,14 +1,14 @@
 // Mushaf Madinah Juz-Page mapping
 export const JUZ_PAGE_MAP: Record<number, { start: number; end: number; pages: number }> = {
-  1:  { start: 1,   end: 21,  pages: 21 },
-  2:  { start: 22,  end: 41,  pages: 20 },
-  3:  { start: 42,  end: 61,  pages: 20 },
-  4:  { start: 62,  end: 81,  pages: 20 },
-  5:  { start: 82,  end: 101, pages: 20 },
-  6:  { start: 102, end: 121, pages: 20 },
-  7:  { start: 122, end: 141, pages: 20 },
-  8:  { start: 142, end: 161, pages: 20 },
-  9:  { start: 162, end: 181, pages: 20 },
+  1: { start: 1, end: 21, pages: 21 },
+  2: { start: 22, end: 41, pages: 20 },
+  3: { start: 42, end: 61, pages: 20 },
+  4: { start: 62, end: 81, pages: 20 },
+  5: { start: 82, end: 101, pages: 20 },
+  6: { start: 102, end: 121, pages: 20 },
+  7: { start: 122, end: 141, pages: 20 },
+  8: { start: 142, end: 161, pages: 20 },
+  9: { start: 162, end: 181, pages: 20 },
   10: { start: 182, end: 201, pages: 20 },
   11: { start: 202, end: 221, pages: 20 },
   12: { start: 222, end: 241, pages: 20 },
@@ -36,7 +36,7 @@ export const LINES_PER_PAGE = 15;
 
 /** Calculate total lines from page/line range */
 export function calculateTotalLines(fromPage: number, fromLine: number, toPage: number, toLine: number): number {
-  return (toLine - fromLine) + ((toPage - fromPage) * LINES_PER_PAGE);
+  return (toLine - fromLine + 1) + ((toPage - fromPage) * LINES_PER_PAGE);
 }
 
 /** Validate page is within juz range */
