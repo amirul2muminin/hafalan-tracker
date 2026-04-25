@@ -5,8 +5,7 @@ import type { Student, HafalanBaruLog, MurojaahLog, PersiapanUjianLog, UjianLog 
 export async function fetchStudents(last_updated_at?: string): Promise<Student[]> {
   let query = supabase
     .from('students')
-    .select('*')
-    .order('name');
+    .select('*');
 
   if (last_updated_at) {
     query = query.gte('updated_at', last_updated_at);
@@ -38,9 +37,16 @@ export async function updateStudent(
   return data;
 }
 
-export async function deleteStudent(id: string): Promise<void> {
-  const { error } = await supabase.from('students').delete().eq('id', id);
+export async function deleteStudent(id: string): Promise<Student> {
+  const { data, error } = await supabase
+    .from('students')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
   if (error) throw error;
+  return data;
 }
 
 // Hafalan Baru Logs
@@ -50,8 +56,7 @@ export async function fetchHafalanBaruLogs(
 ): Promise<HafalanBaruLog[]> {
   let query = supabase
     .from('hafalan_baru_logs')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*');
 
   if (studentId) {
     query = query.eq('student_id', studentId);
@@ -87,13 +92,16 @@ export async function updateHafalanBaruLog(
   return data;
 }
 
-export async function deleteHafalanBaruLog(id: string): Promise<void> {
-  const { error } = await supabase
+export async function deleteHafalanBaruLog(id: string): Promise<HafalanBaruLog> {
+  const { data, error } = await supabase
     .from('hafalan_baru_logs')
-    .delete()
-    .eq('id', id);
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
 
   if (error) throw error;
+  return data;
 }
 
 
@@ -106,8 +114,7 @@ export async function fetchPersiapanUjianLogs(
 ): Promise<PersiapanUjianLog[]> {
   let query = supabase
     .from('persiapan_ujian_logs')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*');
 
   if (studentId) {
     query = query.eq('student_id', studentId);
@@ -143,13 +150,16 @@ export async function updatePersiapanUjianLog(
   return data;
 }
 
-export async function deletePersiapanUjianLog(id: string): Promise<void> {
-  const { error } = await supabase
+export async function deletePersiapanUjianLog(id: string): Promise<PersiapanUjianLog> {
+  const { data, error } = await supabase
     .from('persiapan_ujian_logs')
-    .delete()
-    .eq('id', id);
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
 
   if (error) throw error;
+  return data;
 }
 
 // Ujian Logs
@@ -159,8 +169,7 @@ export async function fetchUjianLogs(
 ): Promise<UjianLog[]> {
   let query = supabase
     .from('ujian_logs')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*');
 
   if (studentId) {
     query = query.eq('student_id', studentId);
@@ -196,13 +205,16 @@ export async function updateUjianLog(
   return data;
 }
 
-export async function deleteUjianLog(id: string): Promise<void> {
-  const { error } = await supabase
+export async function deleteUjianLog(id: string): Promise<UjianLog> {
+  const { data, error } = await supabase
     .from('ujian_logs')
-    .delete()
-    .eq('id', id);
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
 
   if (error) throw error;
+  return data;
 }
 
 // Murojaah Logs
@@ -212,8 +224,7 @@ export async function fetchMurojaahLogs(
 ): Promise<MurojaahLog[]> {
   let query = supabase
     .from('murojaah_logs')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*');
 
   if (studentId) {
     query = query.eq('student_id', studentId);
@@ -249,12 +260,15 @@ export async function updateMurojaahLog(
   return data;
 }
 
-export async function deleteMurojaahLog(id: string): Promise<void> {
-  const { error } = await supabase
+export async function deleteMurojaahLog(id: string): Promise<MurojaahLog> {
+  const { data, error } = await supabase
     .from('murojaah_logs')
-    .delete()
-    .eq('id', id);
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
 
   if (error) throw error;
+  return data;
 }
 
