@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, RefreshCw, Users, ChevronRight } from 'lucide-react';
+import { BookOpen, RefreshCw, Users, ChevronRight, ChevronDown } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import BottomNav from '@/components/BottomNav';
 import { format } from 'date-fns';
@@ -121,6 +121,11 @@ const Dashboard = () => {
               )}
             </div>
           </div>
+
+          {/* See More Link */}
+          <button onClick={() => navigate('/summary')} className="w-full mt-2 flex items-center justify-center gap-1 text-[10px] text-primary-foreground/60 hover:text-primary-foreground/80 transition-colors">
+            Lihat Selengkapnya <ChevronDown className="w-3 h-3" />
+          </button>
         </div>
       </div>
 
