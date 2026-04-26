@@ -1,22 +1,16 @@
-import { useEffect, useState, useMemo } from 'react';
-import { useAppStore } from '@/stores/useAppStore';
+import { useState } from 'react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Tooltip } from 'recharts';
-import {
-  calcHafalanMetrics, calcMurojaahMetrics, calcExamMetrics,
-  calcBalance, generateAlerts, calcStudentRankings, calcClassSummary,
-  getLast7DaysChart, getWeeklyChart,
-  type Alert,
-} from '@/lib/analytics-utils';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { TrendIcon, GrowthBadge, MetricCard, PrepBenchmarkBadge, BalanceBadge } from '@/components/analytics/shared';
 import { AlertTriangle, AlertCircle, Flame, Target, BookOpen, RefreshCw, GraduationCap, Users, BarChart3, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const COLORS = ['hsl(213,94%,56%)', 'hsl(152,69%,41%)', 'hsl(25,95%,53%)', 'hsl(199,89%,48%)'];
 
-const AlertItem = ({ alert }: { alert: Alert }) => (
+const AlertItem = ({ alert }: { alert: { studentName: string; message: string; type: 'danger' | 'warning'; category: string } }) => (
   <div className={cn(
     'flex items-start gap-3 p-3 rounded-lg border',
     alert.type === 'danger' ? 'bg-destructive/5 border-destructive/20' : 'bg-warning/5 border-warning/20',
@@ -36,28 +30,21 @@ const AlertItem = ({ alert }: { alert: Alert }) => (
 );
 
 const Analytics = () => {
-  const { students, hafalanBaruLogs, murojaahLogs, persiapanUjianLogs, ujianLogs, fetchAll } = useAppStore();
   const [activeTab, setActiveTab] = useState('overview');
-
-  useEffect(() => { fetchAll(); }, [fetchAll]);
-
-  const hafalan = useMemo(() => calcHafalanMetrics(hafalanBaruLogs), [hafalanBaruLogs]);
-  const murojaah = useMemo(() => calcMurojaahMetrics(murojaahLogs), [murojaahLogs]);
-  const exam = useMemo(() => calcExamMetrics(persiapanUjianLogs, ujianLogs), [persiapanUjianLogs, ujianLogs]);
-  const balance = useMemo(() => calcBalance(hafalanBaruLogs, murojaahLogs), [hafalanBaruLogs, murojaahLogs]);
-  const alerts = useMemo(() => generateAlerts(students, hafalanBaruLogs, murojaahLogs, persiapanUjianLogs), [students, hafalanBaruLogs, murojaahLogs, persiapanUjianLogs]);
-  const rankings = useMemo(() => calcStudentRankings(students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs), [students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs]);
-  const classSummary = useMemo(() => calcClassSummary(students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs, murojaahLogs), [students, hafalanBaruLogs, persiapanUjianLogs, ujianLogs, murojaahLogs]);
-  const last7 = useMemo(() => getLast7DaysChart(hafalanBaruLogs, murojaahLogs), [hafalanBaruLogs, murojaahLogs]);
-  const weekly = useMemo(() => getWeeklyChart(hafalanBaruLogs, murojaahLogs), [hafalanBaruLogs, murojaahLogs]);
-
-  const examStats = useMemo(() => [
-    { name: 'Mumtaz / Jayyid+', value: exam.passed },
-    { name: 'Jayyid / Maqbul', value: ujianLogs.filter(e => e.result === 'jayyid' || e.result === 'maqbul').length },
-    { name: 'Gagal', value: exam.failed },
-  ].filter(e => e.value > 0), [exam, ujianLogs]);
-
-  const totalLogs = hafalanBaruLogs.length + murojaahLogs.length + persiapanUjianLogs.length + ujianLogs.length;
+  const {
+    hafalan,
+    murojaah,
+    exam,
+    balance,
+    alerts,
+    rankings,
+    classSummary,
+    last7Days,
+    weekly,
+    examStats,
+    totalLogs,
+    totalLines,
+  } = useAnalytics();
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -91,7 +78,7 @@ const Analytics = () => {
             <div className="bg-card rounded-xl p-4 border border-border">
               <h3 className="text-xs font-bold text-foreground mb-3">Aktivitas 7 Hari Terakhir (baris)</h3>
               <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={last7}>
+                <BarChart data={last7Days}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
                   <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
@@ -144,7 +131,7 @@ const Analytics = () => {
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-3">
               <MetricCard label="Total Catatan" value={totalLogs} icon={<BookOpen className="w-3.5 h-3.5 text-primary" />} />
-              <MetricCard label="Total Baris" value={hafalanBaruLogs.reduce((s, l) => s + l.total_lines, 0)} icon={<Target className="w-3.5 h-3.5 text-hafalan" />} />
+              <MetricCard label="Total Baris" value={totalLines} icon={<Target className="w-3.5 h-3.5 text-hafalan" />} />
             </div>
           </TabsContent>
 
@@ -376,7 +363,7 @@ const Analytics = () => {
                 <div className="w-12 h-12 rounded-full bg-success/15 flex items-center justify-center mx-auto mb-3">
                   <Target className="w-6 h-6 text-success" />
                 </div>
-                <p className="text-sm font-bold text-foreground">Semua Baik! 🎉</p>
+                <p className="text-sm font-bold text-foreground">Semua Baik!</p>
                 <p className="text-xs text-muted-foreground mt-1">Tidak ada peringatan saat ini</p>
               </div>
             ) : (

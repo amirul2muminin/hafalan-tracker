@@ -1,51 +1,25 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAppStore } from '@/stores/useAppStore';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Tooltip } from 'recharts';
-import {
-  calcHafalanMetrics, calcMurojaahMetrics, calcExamMetrics,
-  calcBalance, getLast7DaysChart, getWeeklyChart
-} from '@/lib/analytics-utils';
+import { useStudentAnalytics } from '@/hooks/useStudentAnalytics';
 import { TrendIcon, GrowthBadge, MetricCard, PrepBenchmarkBadge, BalanceBadge } from '@/components/analytics/shared';
 import { Flame, BookOpen, RefreshCw, GraduationCap, BarChart3, Target } from 'lucide-react';
 
 const COLORS = ['hsl(213,94%,56%)', 'hsl(152,69%,41%)', 'hsl(25,95%,53%)', 'hsl(199,89%,48%)'];
 
 const StudentAnalytics = () => {
-  const { studentId } = useParams();
-  const { students, getStudentHafalanLogs, getStudentMurojaahLogs, getStudentPersiapanLogs, getStudentUjianLogs, getStudentProgress, fetchStudentData } = useAppStore();
+  const { studentId } = useParams<{ studentId: string }>();
+
+  if (!studentId) return <div className="p-4">ID murid tidak ditemukan</div>;
+
+  const { student, hafalan, murojaah, exam, balance, last7Days, weekly, examStats, hasData } = useStudentAnalytics(studentId);
+
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    if (studentId) fetchStudentData(studentId);
-  }, [studentId, fetchStudentData]);
-
-  const student = students.find((s) => s.id === studentId);
   if (!student) return <div className="p-4">Murid tidak ditemukan</div>;
-
-  const hLogs = getStudentHafalanLogs(student.id);
-  const mLogs = getStudentMurojaahLogs(student.id);
-  const pLogs = getStudentPersiapanLogs(student.id);
-  const uLogs = getStudentUjianLogs(student.id);
-  const progress = getStudentProgress(student.id);
-
-  const hafalan = useMemo(() => calcHafalanMetrics(hLogs, student.id), [hLogs, student.id]);
-  const murojaah = useMemo(() => calcMurojaahMetrics(mLogs, student.id), [mLogs, student.id]);
-  const exam = useMemo(() => calcExamMetrics(pLogs, uLogs, student.id), [pLogs, uLogs, student.id]);
-  const balance = useMemo(() => calcBalance(hLogs, mLogs, student.id), [hLogs, mLogs, student.id]);
-  const last7 = useMemo(() => getLast7DaysChart(hLogs, mLogs), [hLogs, mLogs]);
-  const weekly = useMemo(() => getWeeklyChart(hLogs, mLogs), [hLogs, mLogs]);
-
-  const examStats = useMemo(() => [
-    { name: 'Mumtaz / Jayyid+', value: exam.passed },
-    { name: 'Jayyid / Maqbul', value: uLogs.filter(e => e.result === 'jayyid' || e.result === 'maqbul').length },
-    { name: 'Gagal', value: exam.failed },
-  ].filter((e) => e.value > 0), [exam, uLogs]);
-
-  const hasData = hLogs.length > 0 || mLogs.length > 0 || uLogs.length > 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -79,7 +53,7 @@ const StudentAnalytics = () => {
                 <div className="bg-card rounded-xl p-4 border border-border">
                   <h3 className="text-xs font-bold text-foreground mb-3">Aktivitas 7 Hari Terakhir (baris)</h3>
                   <ResponsiveContainer width="100%" height={160}>
-                    <BarChart data={last7}>
+                    <BarChart data={last7Days}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
                       <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
