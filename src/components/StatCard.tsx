@@ -1,42 +1,62 @@
-import { cn } from '@/lib/utils';
+"use client";
+
+import { cn } from "@/lib/utils";
 
 interface StatCardProps {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  variant?: 'hafalan' | 'murojaah' | 'ujian' | 'default';
+  title: string;
+  value: string;
+  subtitle?: string;
+  compare?: number;
+  variant?: "default" | "hafalan" | "murojaah";
 }
 
-const StatCard = ({ label, value, icon, variant = 'default' }: StatCardProps) => {
+export function StatCard({
+  title,
+  value,
+  subtitle,
+  compare,
+  variant = "default",
+}: StatCardProps) {
+  const isPositive = (compare ?? 0) > 0;
+  const isNegative = (compare ?? 0) < 0;
+
   return (
-    <div className={cn(
-      'rounded-xl p-4 flex items-center gap-3',
-      variant === 'hafalan' && 'bg-hafalan-light',
-      variant === 'murojaah' && 'bg-murojaah-light',
-      variant === 'ujian' && 'bg-ujian-light',
-      variant === 'default' && 'bg-card border border-border',
-    )}>
-      <div className={cn(
-        'w-10 h-10 rounded-lg flex items-center justify-center',
-        variant === 'hafalan' && 'bg-hafalan text-primary-foreground',
-        variant === 'murojaah' && 'bg-murojaah text-primary-foreground',
-        variant === 'ujian' && 'bg-ujian text-primary-foreground',
-        variant === 'default' && 'bg-muted text-muted-foreground',
-      )}>
-        {icon}
+    <div
+      className={cn(
+        "rounded-2xl border p-3",
+        "bg-card text-card-foreground",
+        "flex flex-col gap-2",
+        "transition-colors",
+      )}
+    >
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-muted-foreground">{title}</span>
+
+        {compare !== undefined && (
+          <span
+            className={cn(
+              "text-[10px] font-medium px-1.5 py-0.5 rounded-md",
+              isPositive && "bg-green-500/10 text-green-600",
+              isNegative && "bg-red-500/10 text-red-600",
+              !isPositive && !isNegative && "bg-muted text-muted-foreground",
+            )}
+          >
+            {compare > 0 ? "↑" : compare < 0 ? "↓" : " "}{" "}
+            {Math.abs(compare).toFixed(0)}%
+          </span>
+        )}
       </div>
-      <div>
-        <p className={cn(
-          'text-xs font-medium',
-          variant === 'hafalan' && 'text-hafalan-foreground',
-          variant === 'murojaah' && 'text-murojaah-foreground',
-          variant === 'ujian' && 'text-ujian-foreground',
-          variant === 'default' && 'text-muted-foreground',
-        )}>{label}</p>
-        <p className="text-xl font-bold text-foreground">{value}</p>
+
+      {/* VALUE */}
+      <div className="flex items-end justify-between">
+        <span className="text-xl font-semibold leading-none">{value}</span>
       </div>
+
+      {/* SUBTITLE */}
+      {subtitle && (
+        <span className="text-[11px] text-muted-foreground">{subtitle}</span>
+      )}
     </div>
   );
-};
-
-export default StatCard;
+}
