@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, X } from 'lucide-react';
 import { useState } from 'react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
@@ -14,17 +14,20 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useStudentFilters } from '@/hooks/useStudentFilters';
 
 const StudentList = () => {
   const navigate = useNavigate();
-  const { students, getStudentProgress, fetchAll, addStudent } = useAppStore();
+  const { getStudentProgress, fetchAll, addStudent } = useAppStore();
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [newName, setNewName] = useState('');
 
+  const { getFilteredStudents, activeFilter, filterLabel } = useStudentFilters();
+
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const filtered = students.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = getFilteredStudents().filter((s) => s.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleAddStudent = async () => {
     if (!newName.trim()) return;
@@ -40,13 +43,39 @@ const StudentList = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="Daftar Murid" subtitle={`${students.length} murid`}
+      <PageHeader
+        title="Daftar Murid"
+        subtitle={activeFilter ? `${filtered.length} ${filterLabel()}` : `${filtered.length} murid`}
         action={<Button size="sm" onClick={() => setOpen(true)}>
           + Murid
         </Button>}
       />
 
       <div className="px-4 pt-3 space-y-3">
+        {activeFilter && (
+          <div className={`flex items-center justify-between rounded-xl px-4 py-2.5 border ${
+            activeFilter === 'belum-hafalan'
+              ? 'bg-hafalan/10 border-hafalan/20'
+              : 'bg-murojaah/10 border-murojaah/20'
+          }`}>
+            <span className={`text-sm font-medium ${
+              activeFilter === 'belum-hafalan' ? 'text-hafalan' : 'text-murojaah'
+            }`}>
+              Filter: {filterLabel()}
+            </span>
+            <button
+              onClick={() => navigate('/students')}
+              className={`p-1 rounded-lg hover:bg-opacity-20 transition-colors ${
+                activeFilter === 'belum-hafalan' ? 'hover:bg-hafalan' : 'hover:bg-murojaah'
+              }`}
+            >
+              <X className={`w-4 h-4 ${
+                activeFilter === 'belum-hafalan' ? 'text-hafalan' : 'text-murojaah'
+              }`} />
+            </button>
+          </div>
+        )}
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input type="text" placeholder="Cari murid..." value={search} onChange={(e) => setSearch(e.target.value)}
