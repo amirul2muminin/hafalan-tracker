@@ -1,5 +1,4 @@
 import { useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
 import { useAppStore } from '@/stores/useAppStore';
 import {
   calcHafalanMetrics,
@@ -13,10 +12,11 @@ import {
   type ExamMetrics,
   type BalanceStatus,
 } from '@/lib/analytics-utils';
+import type { HafalanBaruLog, MurojaahLog, UjianLog, Student } from '@/types';
 
 export interface UseStudentAnalyticsReturn {
   studentId: string;
-  student: ReturnType<typeof useAppStore>['students'][number] | undefined;
+  student: Student | undefined;
   hafalan: HafalanMetrics;
   murojaah: MurojaahMetrics;
   exam: ExamMetrics;
@@ -24,9 +24,9 @@ export interface UseStudentAnalyticsReturn {
   last7Days: { day: string; hafalan: number; murojaah: number }[];
   weekly: { week: string; hafalan: number; murojaah: number }[];
   examStats: { name: string; value: number }[];
-  hLogs: ReturnType<typeof useAppStore>['getStudentHafalanLogs'] extends (id: string) => infer R ? R : never;
-  mLogs: ReturnType<typeof useAppStore>['getStudentMurojaahLogs'] extends (id: string) => infer R ? R : never;
-  uLogs: ReturnType<typeof useAppStore>['getStudentUjianLogs'] extends (id: string) => infer R ? R : never;
+  hLogs: HafalanBaruLog[];
+  mLogs: MurojaahLog[];
+  uLogs: UjianLog[];
   hasData: boolean;
 }
 
@@ -37,7 +37,6 @@ export function useStudentAnalytics(studentId: string): UseStudentAnalyticsRetur
     getStudentMurojaahLogs,
     getStudentPersiapanLogs,
     getStudentUjianLogs,
-    getStudentProgress,
     fetchStudentData,
   } = useAppStore();
 
@@ -51,8 +50,6 @@ export function useStudentAnalytics(studentId: string): UseStudentAnalyticsRetur
   const mLogs = getStudentMurojaahLogs(studentId);
   const pLogs = getStudentPersiapanLogs(studentId);
   const uLogs = getStudentUjianLogs(studentId);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const progress = getStudentProgress(studentId);
 
   const hafalan = useMemo(
     () => calcHafalanMetrics(hLogs, studentId),
@@ -107,10 +104,4 @@ export function useStudentAnalytics(studentId: string): UseStudentAnalyticsRetur
     uLogs,
     hasData,
   };
-}
-
-export function useStudentAnalyticsFromParams() {
-  const { studentId } = useParams<{ studentId: string }>();
-  if (!studentId) throw new Error('studentId param is required');
-  return useStudentAnalytics(studentId);
 }
