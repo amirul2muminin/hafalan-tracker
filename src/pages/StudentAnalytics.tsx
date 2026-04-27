@@ -64,6 +64,7 @@ export default function StudentAnalytics() {
         (l) => l.student_id === studentId && groupByDate(l.created_at) === date,
       );
 
+      // hafalan
       const hafalan = hafalanLogs.reduce(
         (sum, l) =>
           sum +
@@ -85,7 +86,6 @@ export default function StudentAnalytics() {
         (l) => l.student_id === studentId && groupByDate(l.created_at) === date,
       ).length;
 
-      // persiapan ujian
       // persiapan ujian
       const persiapan = persiapanUjianLogs.filter(
         (l) => l.student_id === studentId && groupByDate(l.created_at) === date,
@@ -199,6 +199,13 @@ export default function StudentAnalytics() {
             subtitle={`${format(analytics.murojaah.avgPerDay)} / hari`}
             compare={analytics.murojaah.compare}
           />
+
+          <StatCard
+            title="Persiapan Ujian"
+            value={`${analytics.persiapanUjian.totalDays} hari`}
+          />
+
+          <StatCard title="Ujian" value={`${analytics.ujian.total} kali`} />
         </div>
 
         {/* ========================= */}

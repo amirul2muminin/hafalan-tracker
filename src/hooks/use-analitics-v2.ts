@@ -72,7 +72,8 @@ const getPreviousRange = (start: Date, end: Date) => {
 // =========================
 
 export const useAnalytics = (studentId: string, range: Range) => {
-  const { hafalanBaruLogs, murojaahLogs } = useAppStore();
+  const { hafalanBaruLogs, murojaahLogs, ujianLogs, persiapanUjianLogs } =
+    useAppStore();
 
   return useMemo(() => {
     const days = getDaysDiff(range.start, range.end);
@@ -109,7 +110,7 @@ export const useAnalytics = (studentId: string, range: Range) => {
         : ((totalProgress - prevProgress) / prevProgress) * 100;
 
     // =========================
-    // 🔥 MUROJAAH (CURRENT)
+    // 🔥 MUROJAAH
     // =========================
     const currentMurojaah = murojaahLogs.filter(
       (l) =>
@@ -124,9 +125,6 @@ export const useAnalytics = (studentId: string, range: Range) => {
 
     const avgPagesPerDay = totalPages / days;
 
-    // =========================
-    // 🔥 MUROJAAH (PREVIOUS)
-    // =========================
     const prevMurojaah = murojaahLogs.filter(
       (l) =>
         l.student_id === studentId &&
@@ -143,19 +141,90 @@ export const useAnalytics = (studentId: string, range: Range) => {
         : ((totalPages - prevPages) / prevPages) * 100;
 
     // =========================
+    // 🧪 UJIAN
+    // =========================
+    const currentUjianLogs = ujianLogs.filter(
+      (l) =>
+        l.student_id === studentId &&
+        isInRange(l.created_at, range.start, range.end),
+    );
+
+    const ujianCount = currentUjianLogs.length;
+
+    const prevUjianLogs = ujianLogs.filter(
+      (l) =>
+        l.student_id === studentId &&
+        isInRange(l.created_at, prevRange.start, prevRange.end),
+    );
+
+    const prevUjianCount = prevUjianLogs.length;
+
+    const ujianCompare =
+      prevUjianCount === 0
+        ? ujianCount > 0
+          ? 100
+          : 0
+        : ((ujianCount - prevUjianCount) / prevUjianCount) * 100;
+
+    // =========================
+    // 🧠 PERSIAPAN UJIAN (UNIQUE DAY 🔥)
+    // =========================
+    const getUniqueDays = (logs: { created_at: string }[]) => {
+      return new Set(logs.map((l) => l.created_at.split("T")[0])).size;
+    };
+
+    const currentPersiapanLogs = persiapanUjianLogs.filter(
+      (l) =>
+        l.student_id === studentId &&
+        isInRange(l.created_at, range.start, range.end),
+    );
+
+    const persiapanDays = getUniqueDays(currentPersiapanLogs);
+
+    const prevPersiapanLogs = persiapanUjianLogs.filter(
+      (l) =>
+        l.student_id === studentId &&
+        isInRange(l.created_at, prevRange.start, prevRange.end),
+    );
+
+    const prevPersiapanDays = getUniqueDays(prevPersiapanLogs);
+
+    const persiapanCompare =
+      prevPersiapanDays === 0
+        ? persiapanDays > 0
+          ? 100
+          : 0
+        : ((persiapanDays - prevPersiapanDays) / prevPersiapanDays) * 100;
+
+    // =========================
     // 🎯 FINAL
     // =========================
     return {
       hafalan: {
         totalProgress,
         avgPerDay,
-        compare: hafalanCompare, // 🔥 NEW
+        compare: hafalanCompare,
       },
       murojaah: {
         totalPages,
         avgPerDay: avgPagesPerDay,
-        compare: murojaahCompare, // 🔥 NEW
+        compare: murojaahCompare,
+      },
+      ujian: {
+        total: ujianCount,
+        compare: ujianCompare,
+      },
+      persiapanUjian: {
+        totalDays: persiapanDays,
+        compare: persiapanCompare,
       },
     };
-  }, [studentId, range, hafalanBaruLogs, murojaahLogs]);
+  }, [
+    studentId,
+    range,
+    hafalanBaruLogs,
+    murojaahLogs,
+    ujianLogs,
+    persiapanUjianLogs,
+  ]);
 };
