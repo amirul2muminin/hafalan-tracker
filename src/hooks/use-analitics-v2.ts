@@ -95,6 +95,20 @@ const examTypes: { value: ExamType; label: string }[] = [
   { value: "five_juz", label: "5 Juz" },
 ];
 
+const PASSING: Record<string, number> = {
+  mumtaz: 7,
+  jayyid_jiddan_plus: 6,
+  jayyid_jiddan: 5,
+  jayyid_plus: 4,
+  jayyid: 3,
+  maqbul: 2,
+  rosib: 1,
+};
+
+const isPass = (result: string) => {
+  return PASSING[result] >= PASSING["maqbul"];
+};
+
 // =========================
 // 🚀 MAIN HOOK
 // =========================
@@ -274,6 +288,92 @@ export const useAnalytics = (studentId: string, range: Range) => {
         : ((persiapanDays - prevPersiapanDays) / prevPersiapanDays) * 100;
 
     // =========================
+    // 🔁 BUILD EXAM CYCLES
+    // =========================
+
+    const sortedUjian = [...ujianLogs]
+      .filter((l) => l.student_id === studentId)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+
+    const sortedPersiapan = [...persiapanUjianLogs]
+      .filter((l) => l.student_id === studentId)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+
+    let pIndex = 0;
+    let currentPersiapan: typeof sortedPersiapan = [];
+
+    const cycles: {
+      type: string;
+      juz: number;
+      attempt: number;
+      days: number;
+      ideal: number;
+      efficiency: number;
+    }[] = [];
+
+    let attemptCounter: Record<string, number> = {};
+
+    for (let i = 0; i < sortedUjian.length; i++) {
+      const exam = sortedUjian[i];
+      const examDate = new Date(exam.created_at);
+
+      // kumpulkan persiapan sebelum ujian ini
+      while (
+        pIndex < sortedPersiapan.length &&
+        new Date(sortedPersiapan[pIndex].created_at) <= examDate
+      ) {
+        currentPersiapan.push(sortedPersiapan[pIndex]);
+        pIndex++;
+      }
+
+      const pass = isPass(exam.result);
+
+      // increment attempt per type+juz
+      const key = `${exam.exam_type}-${exam.juz_id}`;
+      if (!attemptCounter[key]) attemptCounter[key] = 1;
+
+      if (pass) {
+        const days = getUniqueDays(currentPersiapan);
+
+        const IDEAL_DAYS: Record<string, number> = {
+          quarter_juz: 2,
+          half_juz: 4,
+          one_juz: 7,
+          five_juz: 14,
+        };
+
+        const ideal = IDEAL_DAYS[exam.exam_type] || 7;
+
+        cycles.push({
+          type: exam.exam_type,
+          juz: exam.juz_id,
+          attempt: attemptCounter[key],
+          days,
+          ideal,
+          efficiency: days === 0 ? 0 : ideal / days,
+        });
+
+        // reset untuk cycle berikutnya
+        currentPersiapan = [];
+        attemptCounter[key] += 1;
+      }
+    }
+
+    const formatType = (type: string) => {
+      if (type === "quarter_juz") return "¼ Juz";
+      if (type === "half_juz") return "½ Juz";
+      if (type === "one_juz") return "1 Juz";
+      if (type === "five_juz") return "5 Juz";
+      return type;
+    };
+
+    const efficiencyData = cycles.map((c) => ({
+      label: `${formatType(c.type)} ke-${c.attempt} (Juz ${c.juz})`,
+      days: c.days,
+      efficiency: c.efficiency,
+      ideal: c.ideal, // ✅ WAJIB
+    }));
+    // =========================
     // 🎯 FINAL
     // =========================
     return {
@@ -296,6 +396,9 @@ export const useAnalytics = (studentId: string, range: Range) => {
       persiapanUjian: {
         totalDays: persiapanDays,
         compare: persiapanCompare,
+      },
+      efficiency: {
+        perExam: efficiencyData,
       },
     };
   }, [

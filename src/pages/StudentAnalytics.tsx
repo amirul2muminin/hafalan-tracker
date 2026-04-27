@@ -18,6 +18,7 @@ import {
 import { StatCard } from "@/components/StatCard";
 import { useAnalytics } from "@/hooks/use-analitics-v2";
 import { ExamStatCard } from "@/components/ExamStatCard";
+import { EfficiencyChart } from "@/components/EfficientcyChart";
 
 type RangeType = "7d" | "30d" | "90d";
 
@@ -210,6 +211,8 @@ export default function StudentAnalytics() {
             resultData={analytics.ujian.distribution}
             typeData={analytics.ujian.typeDistribution}
           />
+
+          <EfficiencyChart data={analytics.efficiency.perExam} />
         </div>
 
         {/* ========================= */}
