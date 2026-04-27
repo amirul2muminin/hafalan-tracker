@@ -206,7 +206,10 @@ export default function StudentAnalytics() {
             value={`${analytics.persiapanUjian.totalDays} hari`}
           />
 
-          <ExamStatCard data={analytics.ujian.distribution} />
+          <ExamStatCard
+            resultData={analytics.ujian.distribution}
+            typeData={analytics.ujian.typeDistribution}
+          />
         </div>
 
         {/* ========================= */}

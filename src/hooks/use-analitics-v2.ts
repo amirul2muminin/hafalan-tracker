@@ -86,6 +86,15 @@ const examResults: { value: ExamResult; label: string }[] = [
   { value: "rosib", label: "Rosib" },
 ];
 
+type ExamType = "quarter_juz" | "half_juz" | "one_juz" | "five_juz";
+
+const examTypes: { value: ExamType; label: string }[] = [
+  { value: "quarter_juz", label: "¼ Juz" },
+  { value: "half_juz", label: "½ Juz" },
+  { value: "one_juz", label: "1 Juz" },
+  { value: "five_juz", label: "5 Juz" },
+];
+
 // =========================
 // 🚀 MAIN HOOK
 // =========================
@@ -183,6 +192,29 @@ export const useAnalytics = (studentId: string, range: Range) => {
       rosib: 0,
     };
 
+    // =========================
+    // 📊 DISTRIBUSI TIPE UJIAN
+    // =========================
+    const typeMap: Record<ExamType, number> = {
+      quarter_juz: 0,
+      half_juz: 0,
+      one_juz: 0,
+      five_juz: 0,
+    };
+
+    currentUjianLogs.forEach((l) => {
+      const t = l.exam_type as ExamType;
+      if (typeMap[t] !== undefined) {
+        typeMap[t]++;
+      }
+    });
+
+    const examTypeDistribution = examTypes.map((t) => ({
+      name: t.label,
+      value: typeMap[t.value],
+      key: t.value,
+    }));
+
     currentUjianLogs.forEach((l) => {
       const r = l.result as ExamResult;
       if (resultMap[r] !== undefined) {
@@ -259,6 +291,7 @@ export const useAnalytics = (studentId: string, range: Range) => {
         total: ujianCount,
         compare: ujianCompare,
         distribution: examDistribution,
+        typeDistribution: examTypeDistribution,
       },
       persiapanUjian: {
         totalDays: persiapanDays,
