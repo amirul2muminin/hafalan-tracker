@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { StatCard } from "@/components/StatCard";
 import { useAnalytics } from "@/hooks/use-analitics-v2";
+import { ExamStatCard } from "@/components/ExamStatCard";
 
 type RangeType = "7d" | "30d" | "90d";
 
@@ -205,7 +206,7 @@ export default function StudentAnalytics() {
             value={`${analytics.persiapanUjian.totalDays} hari`}
           />
 
-          <StatCard title="Ujian" value={`${analytics.ujian.total} kali`} />
+          <ExamStatCard data={analytics.ujian.distribution} />
         </div>
 
         {/* ========================= */}

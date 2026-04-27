@@ -67,6 +67,25 @@ const getPreviousRange = (start: Date, end: Date) => {
   return { start: prevStart, end: prevEnd };
 };
 
+type ExamResult =
+  | "mumtaz"
+  | "jayyid_jiddan_plus"
+  | "jayyid_jiddan"
+  | "jayyid_plus"
+  | "jayyid"
+  | "maqbul"
+  | "rosib";
+
+const examResults: { value: ExamResult; label: string }[] = [
+  { value: "mumtaz", label: "Mumtaz" },
+  { value: "jayyid_jiddan_plus", label: "Jayyid Jiddan +" },
+  { value: "jayyid_jiddan", label: "Jayyid Jiddan" },
+  { value: "jayyid_plus", label: "Jayyid +" },
+  { value: "jayyid", label: "Jayyid" },
+  { value: "maqbul", label: "Maqbul" },
+  { value: "rosib", label: "Rosib" },
+];
+
 // =========================
 // 🚀 MAIN HOOK
 // =========================
@@ -151,6 +170,32 @@ export const useAnalytics = (studentId: string, range: Range) => {
 
     const ujianCount = currentUjianLogs.length;
 
+    // =========================
+    // 🥧 DISTRIBUSI NILAI UJIAN (PIE)
+    // =========================
+    const resultMap: Record<ExamResult, number> = {
+      mumtaz: 0,
+      jayyid_jiddan_plus: 0,
+      jayyid_jiddan: 0,
+      jayyid_plus: 0,
+      jayyid: 0,
+      maqbul: 0,
+      rosib: 0,
+    };
+
+    currentUjianLogs.forEach((l) => {
+      const r = l.result as ExamResult;
+      if (resultMap[r] !== undefined) {
+        resultMap[r]++;
+      }
+    });
+
+    const examDistribution = examResults.map((r) => ({
+      name: r.label,
+      value: resultMap[r.value],
+      key: r.value,
+    }));
+
     const prevUjianLogs = ujianLogs.filter(
       (l) =>
         l.student_id === studentId &&
@@ -213,6 +258,7 @@ export const useAnalytics = (studentId: string, range: Range) => {
       ujian: {
         total: ujianCount,
         compare: ujianCompare,
+        distribution: examDistribution,
       },
       persiapanUjian: {
         totalDays: persiapanDays,
