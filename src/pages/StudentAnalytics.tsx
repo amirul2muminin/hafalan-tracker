@@ -209,7 +209,7 @@ export default function StudentAnalytics() {
             typeData={analytics.ujian.typeDistribution}
           />
 
-          <EfficientcyChart efficiencyData={analytics.efficiency.perExam} />
+          <EfficientcyChart perExam={analytics.efficiency.perExam} />
         </div>
 
         {/* ========================= */}
