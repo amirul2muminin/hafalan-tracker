@@ -18,7 +18,7 @@ import {
 import { StatCard } from "@/components/StatCard";
 import { useAnalytics } from "@/hooks/use-analitics-v2";
 import { ExamStatCard } from "@/components/ExamStatCard";
-import { EfficiencyChart } from "@/components/EfficientcyChart";
+import EfficientcyChart from "@/components/EfficientcyChart";
 
 type RangeType = "7d" | "30d" | "90d";
 
@@ -201,18 +201,15 @@ export default function StudentAnalytics() {
             subtitle={`${format(analytics.murojaah.avgPerDay)} / hari`}
             compare={analytics.murojaah.compare}
           />
+        </div>
 
-          <StatCard
-            title="Persiapan Ujian"
-            value={`${analytics.persiapanUjian.totalDays} hari`}
-          />
-
+        <div className="space-y-4">
           <ExamStatCard
             resultData={analytics.ujian.distribution}
             typeData={analytics.ujian.typeDistribution}
           />
 
-          <EfficiencyChart data={analytics.efficiency.perExam} />
+          <EfficientcyChart efficiencyData={analytics.efficiency.perExam} />
         </div>
 
         {/* ========================= */}
