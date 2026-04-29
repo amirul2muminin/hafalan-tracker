@@ -60,3 +60,19 @@ export function linesToPages(totalLines: number): number {
 export function pagesToJuz(totalPages: number): number {
   return Math.round((totalPages / 20) * 10) / 10;
 }
+
+/** Get page count for a specific quarter of a juz (1-4) */
+export function getQuarterJuzPages(
+  juzId: number,
+  quarter: 1 | 2 | 3 | 4,
+): number {
+  if (juzId === 1) {
+    if (quarter === 1) return 6; // hlm 1-6
+    return 5;
+  }
+  if (juzId === 30) {
+    if (quarter === 1) return 5;
+    return 6;
+  }
+  return 5; // Juz 2-29: setiap quarter 5 halaman
+}

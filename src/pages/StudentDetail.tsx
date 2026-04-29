@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import EmptyState from '@/components/EmptyState';
-import { BookOpen, RefreshCw, Plus, BarChart3, ChevronRight, IdCardLanyard, Pencil, Trash2, MoreVertical } from 'lucide-react';
+import { BookOpen, RefreshCw, Plus, BarChart3, ChevronRight, IdCardLanyard, Pencil, Trash2, MoreVertical, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { JUZ_PAGE_MAP, getQuarterJuzPages } from '@/lib/juz-mapping';
 import { id as idLocale } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -126,6 +127,36 @@ const StudentDetail = () => {
     ...persiapanLogs.map(l => ({ ...l, type: 'persiapan_ujian' as const })),
     ...examLogs.map(l => ({ ...l, type: 'ujian' as const })),
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Milestone progress calculation
+  const latestSetoran = hafalanLogs.length > 0
+    ? hafalanLogs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    : null;
+
+  const milestoneInfo = (() => {
+    if (!latestSetoran) return null;
+    const currentJuz = latestSetoran.juz_id;
+    const currentPage = latestSetoran.to_page;
+    const juzInfo = JUZ_PAGE_MAP[currentJuz];
+    if (!juzInfo) return null;
+
+    const pageInJuz = currentPage - juzInfo.start + 1;
+    const quarter = Math.ceil(pageInJuz / 5) as 1 | 2 | 3 | 4;
+    const quarterStartPage = (quarter - 1) * 5 + 1;
+    const pagesInQuarter = getQuarterJuzPages(currentJuz, quarter);
+    const currentPageInQuarter = Math.max(1, Math.min(pageInJuz - (quarter - 1) * 5, pagesInQuarter));
+    const percentage = Math.round((currentPageInQuarter / pagesInQuarter) * 100);
+    const pagesRemaining = Math.max(0, pagesInQuarter - currentPageInQuarter);
+
+    return {
+      juz: currentJuz,
+      quarter,
+      pagesInQuarter,
+      currentPageInQuarter,
+      percentage,
+      pagesRemaining,
+    };
+  })();
 
   // Edit handlers
   const openEditSetoran = (log: HafalanBaruLog) => {
@@ -268,15 +299,48 @@ const StudentDetail = () => {
       <div className="px-4 pt-3 space-y-2">
         {activeTab === 'hafalan' && (
           <>
-            <button onClick={() => navigate(`/students/${student.id}/analytics`)}
-              className="w-full bg-primary/5 rounded-xl p-3 border border-primary/20 flex items-center gap-3 mb-2">
-              <BarChart3 className="w-5 h-5 text-primary" />
-              <div className="text-left flex-1">
-                <p className="text-xs font-semibold text-foreground">Lihat Analitik</p>
-                <p className="text-[10px] text-muted-foreground">Statistik & tren hafalan</p>
+            {milestoneInfo ? (
+              <div className="bg-card rounded-xl p-4 border border-primary/20 mb-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-semibold text-primary">MILESTONE SELANJUTNYA</span>
+                </div>
+                <p className="text-sm font-semibold text-foreground mb-1">
+                  Juz {milestoneInfo.juz} · ¼ Juz ke-{milestoneInfo.quarter}
+                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${milestoneInfo.percentage}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">{milestoneInfo.percentage}%</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {milestoneInfo.currentPageInQuarter} / {milestoneInfo.pagesInQuarter} halaman
+                </p>
+                {milestoneInfo.pagesRemaining > 0 ? (
+                  <p className="text-xs text-primary mt-1">
+                    ✨ {milestoneInfo.pagesRemaining} halaman lagi menuju milestone!
+                  </p>
+                ) : (
+                  <p className="text-xs text-success mt-1">
+                    🎉 Milestone tercapai!
+                  </p>
+                )}
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </button>
+            ) : (
+              <div className="bg-card rounded-xl p-4 border border-muted mb-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xs font-semibold text-muted-foreground">MILESTONE SELANJUTNYA</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Mulai hafalan untuk melihat progress milestone
+                </p>
+              </div>
+            )}
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs text-muted-foreground">{combinedHafalanLogs.length} catatan</span>
               <Button size="sm" onClick={() => navigate(`/add/hafalan?student=${student.id}`)}>
