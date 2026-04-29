@@ -12,7 +12,9 @@ import {
   type ExamMetrics,
   type BalanceStatus,
 } from '@/lib/analytics-utils';
-import type { HafalanBaruLog, MurojaahLog, UjianLog, Student } from '@/types';
+import type { Database } from '@/integrations/supabase/types';
+import type { HafalanBaruLog, MurojaahLog, UjianLog } from '@/types';
+type Student = Database['public']['Tables']['students']['Row'];
 
 export interface UseStudentAnalyticsReturn {
   studentId: string;

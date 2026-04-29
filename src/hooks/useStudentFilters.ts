@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppStore } from '@/stores/useAppStore';
-import type { Student } from '@/types';
+import type { Database } from '@/integrations/supabase/types';
+
+type Student = Database['public']['Tables']['students']['Row'];
 
 export type StudentFilter = 'belum-hafalan' | 'belum-murojaah' | null;
 

@@ -1,8 +1,20 @@
 import { create } from 'zustand';
-import type { Student, HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, StudentProgress } from '@/types';
+import type { Database } from '@/integrations/supabase/types';
 import { linesToPages, pagesToJuz } from '@/lib/juz-mapping';
 import * as api from '@/lib/supabase-queries';
 import { persist } from 'zustand/middleware';
+
+type Student = Database['public']['Tables']['students']['Row'];
+type HafalanBaruLog = Database['public']['Tables']['hafalan_baru_logs']['Row'];
+type PersiapanUjianLog = Database['public']['Tables']['persiapan_ujian_logs']['Row'];
+type UjianLog = Database['public']['Tables']['ujian_logs']['Row'];
+type MurojaahLog = Database['public']['Tables']['murojaah_logs']['Row'];
+
+interface StudentProgress {
+  total_lines: number;
+  total_pages: number;
+  total_juz: number;
+}
 
 interface AppState {
   students: Student[];

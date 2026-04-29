@@ -1,5 +1,17 @@
-import type { HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, Student, StudentProgress } from '@/types';
+import type { Database } from '@/integrations/supabase/types';
 import { linesToPages, pagesToJuz } from './juz-mapping';
+
+type HafalanBaruLog = Database['public']['Tables']['hafalan_baru_logs']['Row'];
+type PersiapanUjianLog = Database['public']['Tables']['persiapan_ujian_logs']['Row'];
+type UjianLog = Database['public']['Tables']['ujian_logs']['Row'];
+type MurojaahLog = Database['public']['Tables']['murojaah_logs']['Row'];
+type Student = Database['public']['Tables']['students']['Row'];
+
+interface StudentProgress {
+  total_lines: number;
+  total_pages: number;
+  total_juz: number;
+}
 
 // ─── Time helpers ────────────────────────────────────────────
 export function getDateRange(period: 'week' | 'month' | 'semester' | 'year'): { start: Date; end: Date } {

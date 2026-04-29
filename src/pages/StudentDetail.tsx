@@ -25,7 +25,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog, ExamType, ExamResult } from '@/types';
+import type { HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog } from '@/types';
+import type { Database } from '@/integrations/supabase/types';
+import { Constants } from '@/integrations/supabase/types';
+
+type ExamType = Database['public']['Enums']['exam_type'];
+type ExamResult = Database['public']['Enums']['exam_result'];
+
+const examTypes = Constants.public.Enums.exam_type.map(value => ({
+  value,
+  label: value === 'quarter_juz' ? '¼ Juz' : value === 'half_juz' ? '½ Juz' : value === 'one_juz' ? '1 Juz' : '5 Juz',
+}));
+
+const examResults = Constants.public.Enums.exam_result.map(value => ({
+  value,
+  label: value === 'mumtaz' ? 'Mumtaz' : value === 'jayyid_jiddan_plus' ? 'Jayyid Jiddan +' : value === 'jayyid_jiddan' ? 'Jayyid Jiddan' : value === 'jayyid_plus' ? 'Jayyid +' : value === 'jayyid' ? 'Jayyid' : value === 'maqbul' ? 'Maqbul' : 'Rosib',
+}));
 
 const tabs = [
   { key: 'hafalan', label: 'Hafalan', icon: BookOpen },

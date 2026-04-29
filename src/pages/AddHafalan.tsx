@@ -5,24 +5,21 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { calculateTotalLines, getJuzPageRange, isPageInJuz, LINES_PER_PAGE } from '@/lib/juz-mapping';
-import type { ExamType, ExamResult } from '@/types';
+import type { Database } from '@/integrations/supabase/types';
+import { Constants } from '@/integrations/supabase/types';
 
-const examTypes: { value: ExamType; label: string }[] = [
-  { value: 'quarter_juz', label: '¼ Juz' },
-  { value: 'half_juz', label: '½ Juz' },
-  { value: 'one_juz', label: '1 Juz' },
-  { value: 'five_juz', label: '5 Juz' },
-];
+type ExamType = Database['public']['Enums']['exam_type'];
+type ExamResult = Database['public']['Enums']['exam_result'];
 
-const examResults: { value: ExamResult; label: string }[] = [
-  { value: 'mumtaz', label: 'Mumtaz' },
-  { value: 'jayyid_jiddan_plus', label: 'Jayyid Jiddan +' },
-  { value: 'jayyid_jiddan', label: 'Jayyid Jiddan' },
-  { value: 'jayyid_plus', label: 'Jayyid +' },
-  { value: 'jayyid', label: 'Jayyid' },
-  { value: 'maqbul', label: 'Maqbul' },
-  { value: 'rosib', label: 'Rosib' },
-];
+const examTypes = Constants.public.Enums.exam_type.map(value => ({
+  value,
+  label: value === 'quarter_juz' ? '¼ Juz' : value === 'half_juz' ? '½ Juz' : value === 'one_juz' ? '1 Juz' : '5 Juz',
+}));
+
+const examResults = Constants.public.Enums.exam_result.map(value => ({
+  value,
+  label: value === 'mumtaz' ? 'Mumtaz' : value === 'jayyid_jiddan_plus' ? 'Jayyid Jiddan +' : value === 'jayyid_jiddan' ? 'Jayyid Jiddan' : value === 'jayyid_plus' ? 'Jayyid +' : value === 'jayyid' ? 'Jayyid' : value === 'maqbul' ? 'Maqbul' : 'Rosib',
+}));
 
 const AddHafalan = () => {
   const navigate = useNavigate();

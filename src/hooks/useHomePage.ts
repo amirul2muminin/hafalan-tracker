@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useAppStore } from "@/stores/useAppStore";
-import type { Student } from "@/types";
+import type { Database } from '@/integrations/supabase/types';
+type Student = Database['public']['Tables']['students']['Row'];
 
 interface StagnantStudent {
   student: Student;
