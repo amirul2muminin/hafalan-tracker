@@ -37,7 +37,7 @@ const getColor = (eff: number) => {
 
 export default function EfficiencyChartCard({
   perExam,
-  title = "Efficiency per Exam",
+  title = "Efisiensi Persiapan Ujian",
   description,
 }: Props) {
   const chartHeight = perExam.length * (BAR_SIZE + GAP);
@@ -46,7 +46,7 @@ export default function EfficiencyChartCard({
     <div className="w-full rounded-2xl border bg-white shadow-sm">
       {/* HEADER */}
       <div className="p-4 border-b">
-        <h2 className="text-base font-semibold">{title}</h2>
+        <h2 className="text-xs text-muted-foreground">{title}</h2>
         {description && <p className="text-sm text-gray-500">{description}</p>}
       </div>
 
@@ -94,7 +94,7 @@ export default function EfficiencyChartCard({
                         fontSize={12}
                         dominantBaseline="middle"
                       >
-                        {item.label} • {value}d
+                        {item.label}
                       </text>
                     );
                   }}
