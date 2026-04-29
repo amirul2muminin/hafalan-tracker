@@ -26,8 +26,8 @@ interface Props {
 }
 
 // 🔥 config utama
-const BAR_SIZE = 50;
-const GAP = 16;
+const BAR_SIZE = 30;
+const GAP = 25;
 
 const getColor = (eff: number) => {
   if (eff >= 1) return "#22c55e";

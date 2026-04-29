@@ -11,6 +11,10 @@ interface Range {
   end: Date;
 }
 
+// =========================
+// CONSTANTS
+// =========================
+
 const LINES_PER_PAGE = 15;
 
 const IDEAL_DAYS: Record<string, number> = {
@@ -31,21 +35,11 @@ const EXAM_RESULTS: { value: ExamResult; label: string }[] = [
 ];
 
 const EXAM_TYPES: { value: ExamType; label: string }[] = [
-  { value: "quarter_juz", label: "¼ Juz" },
-  { value: "half_juz", label: "½ Juz" },
+  { value: "quarter_juz", label: "¼" },
+  { value: "half_juz", label: "½" },
   { value: "one_juz", label: "1 Juz" },
   { value: "five_juz", label: "5 Juz" },
 ];
-
-const PASSING_SCORE: Record<string, number> = {
-  mumtaz: 7,
-  jayyid_jiddan_plus: 6,
-  jayyid_jiddan: 5,
-  jayyid_plus: 4,
-  jayyid: 3,
-  maqbul: 2,
-  rosib: 1,
-};
 
 // =========================
 // HELPERS
@@ -106,9 +100,6 @@ const getProgressFromLogs = (logs: HafalanBaruLog[]) => {
       toAbsoluteLine(first.from_page, first.from_line),
   );
 };
-
-const isPass = (result: string) =>
-  PASSING_SCORE[result] >= PASSING_SCORE["maqbul"];
 
 const formatExamType = (type: string) =>
   EXAM_TYPES.find((t) => t.value === type)?.label ?? type;
@@ -194,47 +185,39 @@ export const useAnalytics = (studentId: string, range: Range) => {
     const persiapanDays = getUniqueDays(currentPersiapan);
     const prevPersiapanDays = getUniqueDays(prevPersiapan);
 
-    // --- Exam Cycles (Efficiency) ---
-    const sortedUjian = [...ujianLogs]
-      .filter((l) => l.student_id === studentId)
-      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    // --- Exam Efficiency (berbasis grouping persiapan dalam range) ---
+    // Group by (juz_id, exam_type, juz_part), hitung unique days per group
+    const persiapanGroups = new Map<
+      string,
+      { juz_id: number; exam_type: string; juz_part: number; days: Set<string> }
+    >();
 
-    const sortedPersiapan = [...persiapanUjianLogs]
-      .filter((l) => l.student_id === studentId)
-      .sort((a, b) => a.created_at.localeCompare(b.created_at));
-
-    let pIndex = 0;
-    let windowPersiapan: typeof sortedPersiapan = [];
-    const attemptCounter: Record<string, number> = {};
-
-    const efficiencyData = sortedUjian.flatMap((exam) => {
-      const examDate = new Date(exam.created_at);
-
-      while (
-        pIndex < sortedPersiapan.length &&
-        new Date(sortedPersiapan[pIndex].created_at) <= examDate
-      ) {
-        windowPersiapan.push(sortedPersiapan[pIndex++]);
+    currentPersiapan.forEach((l) => {
+      const key = `${l.juz_id}-${l.exam_type}-${l.juz_part}`;
+      if (!persiapanGroups.has(key)) {
+        persiapanGroups.set(key, {
+          juz_id: l.juz_id,
+          exam_type: l.exam_type,
+          juz_part: l.juz_part,
+          days: new Set(),
+        });
       }
+      persiapanGroups.get(key)!.days.add(l.created_at.split("T")[0]);
+    });
 
-      if (!isPass(exam.result)) return [];
-
-      const key = `${exam.exam_type}-${exam.juz_id}`;
-      attemptCounter[key] = (attemptCounter[key] ?? 0) + 1;
-      const attempt = attemptCounter[key];
-
-      const prepDays = getUniqueDays(windowPersiapan);
-      const ideal = IDEAL_DAYS[exam.exam_type] ?? 7;
-      windowPersiapan = [];
-
-      return [
-        {
-          label: `${formatExamType(exam.exam_type)} ke-${attempt} (Juz ${exam.juz_id})`,
-          days: prepDays,
-          ideal,
-          efficiency: prepDays === 0 ? 0 : ideal / prepDays,
-        },
-      ];
+    const efficiencyData = Array.from(persiapanGroups.values()).map((g) => {
+      const prepDays = g.days.size;
+      const ideal = IDEAL_DAYS[g.exam_type] ?? 7;
+      const partLabel =
+        g.exam_type === "one_juz" || g.exam_type === "five_juz"
+          ? ""
+          : `ke-${g.juz_part}`;
+      return {
+        label: `${formatExamType(g.exam_type)} ${partLabel} (${g.juz_id})`,
+        days: prepDays,
+        ideal,
+        efficiency: prepDays === 0 ? 0 : ideal / prepDays,
+      };
     });
 
     // =========================
