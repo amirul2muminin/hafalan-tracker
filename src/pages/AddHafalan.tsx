@@ -199,21 +199,27 @@ const AddHafalan = () => {
           <>
             <div>
               <label className="text-xs font-semibold text-foreground mb-1 block">Tipe Ujian</label>
-              <select value={form.exam_type} onChange={(e) => setForm({ ...form, exam_type: e.target.value as ExamType })}
+              <select value={form.exam_type} onChange={(e) => {
+                const newType = e.target.value as ExamType;
+                const needsReset = newType === 'one_juz' || newType === 'five_juz';
+                setForm({ ...form, exam_type: newType, juz_part: needsReset ? 1 : form.juz_part });
+              }}
                 className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
                 {examTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
-            
-            <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">Juz Part (ke-)</label>
-              <select value={form.juz_part} onChange={(e) => setForm({ ...form, juz_part: +e.target.value })}
-                className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
-                {Array.from({ length: 4 }, (_, i) => i + 1).map(num => (
-                  <option key={num} value={num}>{num}</option>
-                ))}
-              </select>
-            </div>
+
+            {form.exam_type !== 'one_juz' && form.exam_type !== 'five_juz' && (
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Juz Part (ke-)</label>
+                <select value={form.juz_part} onChange={(e) => setForm({ ...form, juz_part: +e.target.value })}
+                  className="w-full py-2.5 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  {Array.from({ length: 4 }, (_, i) => i + 1).map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </>
         )}
 
