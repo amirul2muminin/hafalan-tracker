@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '@/stores/useAppStore';
 import PageHeader from '@/components/PageHeader';
@@ -8,7 +8,7 @@ import { toast } from '@/hooks/use-toast';
 const AddMurojaah = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { students, addMurojaahLog } = useAppStore();
+  const { students, addMurojaahLog, getLastMurojaahLog, fetchStudentData } = useAppStore();
   const preselected = params.get('student') || '';
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -17,6 +17,28 @@ const AddMurojaah = () => {
     total_pages: 3,
     note: '',
   });
+
+  // Fetch student data when student_id changes to ensure we have latest logs
+  useEffect(() => {
+    if (form.student_id) {
+      fetchStudentData(form.student_id);
+    }
+  }, [form.student_id, fetchStudentData]);
+
+  // Apply last murojaah log values when student_id changes
+  useEffect(() => {
+    if (!form.student_id) return;
+
+    const lastLog = getLastMurojaahLog(form.student_id);
+    if (lastLog) {
+      setForm(prev => ({
+        ...prev,
+        juz_id: lastLog.juz_id,
+        total_pages: lastLog.total_pages,
+        note: '',
+      }));
+    }
+  }, [form.student_id, getLastMurojaahLog]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

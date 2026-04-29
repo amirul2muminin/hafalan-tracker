@@ -9,6 +9,10 @@ type HafalanBaruLog = Database['public']['Tables']['hafalan_baru_logs']['Row'];
 type PersiapanUjianLog = Database['public']['Tables']['persiapan_ujian_logs']['Row'];
 type UjianLog = Database['public']['Tables']['ujian_logs']['Row'];
 type MurojaahLog = Database['public']['Tables']['murojaah_logs']['Row'];
+type HafalanBaruLogInsert = Database['public']['Tables']['hafalan_baru_logs']['Insert'];
+type PersiapanUjianLogInsert = Database['public']['Tables']['persiapan_ujian_logs']['Insert'];
+type UjianLogInsert = Database['public']['Tables']['ujian_logs']['Insert'];
+type MurojaahLogInsert = Database['public']['Tables']['murojaah_logs']['Insert'];
 
 interface StudentProgress {
   total_lines: number;
@@ -34,16 +38,16 @@ interface AppState {
   addStudent: (name: string) => Promise<void>;
   updateStudent: (id: string, updates: Partial<Student>) => Promise<void>;
   removeStudent: (id: string) => Promise<void>;
-  addHafalanBaruLog: (log: Omit<HafalanBaruLog, 'id' | 'created_at'>) => Promise<void>;
+  addHafalanBaruLog: (log: HafalanBaruLogInsert) => Promise<void>;
   updateHafalanBaruLog: (id: string, updates: Partial<HafalanBaruLog>) => Promise<void>;
   removeHafalanBaruLog: (id: string) => Promise<void>;
-  addPersiapanUjianLog: (log: Omit<PersiapanUjianLog, 'id' | 'created_at'>) => Promise<void>;
+  addPersiapanUjianLog: (log: PersiapanUjianLogInsert) => Promise<void>;
   updatePersiapanUjianLog: (id: string, updates: Partial<PersiapanUjianLog>) => Promise<void>;
   removePersiapanUjianLog: (id: string) => Promise<void>;
-  addUjianLog: (log: Omit<UjianLog, 'id' | 'created_at'>) => Promise<void>;
+  addUjianLog: (log: UjianLogInsert) => Promise<void>;
   updateUjianLog: (id: string, updates: Partial<UjianLog>) => Promise<void>;
   removeUjianLog: (id: string) => Promise<void>;
-  addMurojaahLog: (log: Omit<MurojaahLog, 'id' | 'created_at'>) => Promise<void>;
+  addMurojaahLog: (log: MurojaahLogInsert) => Promise<void>;
   updateMurojaahLog: (id: string, updates: Partial<MurojaahLog>) => Promise<void>;
   removeMurojaahLog: (id: string) => Promise<void>;
 
@@ -55,6 +59,10 @@ interface AppState {
   getStudentMurojaahLogs: (studentId: string) => MurojaahLog[];
 
   getStudentProgress: (studentId: string) => StudentProgress;
+  getLastHafalanLog: (studentId: string) => HafalanBaruLog | undefined;
+  getLastPersiapanLog: (studentId: string) => PersiapanUjianLog | undefined;
+  getLastUjianLog: (studentId: string) => UjianLog | undefined;
+  getLastMurojaahLog: (studentId: string) => MurojaahLog | undefined;
   getTodayHafalanLogs: () => HafalanBaruLog[];
 }
 
@@ -294,6 +302,23 @@ export const useAppStore = create<AppState>()(
         const total_pages = linesToPages(total_lines);
         const total_juz = pagesToJuz(total_pages);
         return { total_lines, total_pages, total_juz };
+      },
+
+      getLastHafalanLog: (studentId: string) => {
+        const logs = get().getStudentHafalanLogs(studentId);
+        return logs[0];
+      },
+      getLastPersiapanLog: (studentId: string) => {
+        const logs = get().getStudentPersiapanLogs(studentId);
+        return logs[0];
+      },
+      getLastUjianLog: (studentId: string) => {
+        const logs = get().getStudentUjianLogs(studentId);
+        return logs[0];
+      },
+      getLastMurojaahLog: (studentId: string) => {
+        const logs = get().getStudentMurojaahLogs(studentId);
+        return logs[0];
       },
 
       getTodayHafalanLogs: () => {
