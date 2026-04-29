@@ -25,7 +25,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { HafalanBaruLog, PersiapanUjianLog, UjianLog, MurojaahLog } from '@/types';
 import type { Database } from '@/integrations/supabase/types';
 import { Constants } from '@/integrations/supabase/types';
 
@@ -42,27 +41,15 @@ const examResults = Constants.public.Enums.exam_result.map(value => ({
   label: value === 'mumtaz' ? 'Mumtaz' : value === 'jayyid_jiddan_plus' ? 'Jayyid Jiddan +' : value === 'jayyid_jiddan' ? 'Jayyid Jiddan' : value === 'jayyid_plus' ? 'Jayyid +' : value === 'jayyid' ? 'Jayyid' : value === 'maqbul' ? 'Maqbul' : 'Rosib',
 }));
 
+type HafalanBaruLog = Database['public']['Tables']['hafalan_baru_logs']['Row'];
+type PersiapanUjianLog = Database['public']['Tables']['persiapan_ujian_logs']['Row'];
+type UjianLog = Database['public']['Tables']['ujian_logs']['Row'];
+type MurojaahLog = Database['public']['Tables']['murojaah_logs']['Row'];
+
 const tabs = [
   { key: 'hafalan', label: 'Hafalan', icon: BookOpen },
   { key: 'murojaah', label: 'Murojaah', icon: RefreshCw },
 ] as const;
-
-const examTypes: { value: ExamType; label: string }[] = [
-  { value: 'quarter_juz', label: '¼ Juz' },
-  { value: 'half_juz', label: '½ Juz' },
-  { value: 'one_juz', label: '1 Juz' },
-  { value: 'five_juz', label: '5 Juz' },
-];
-
-const examResults: { value: ExamResult; label: string }[] = [
-  { value: 'mumtaz', label: 'Mumtaz' },
-  { value: 'jayyid_jiddan_plus', label: 'Jayyid Jiddan +' },
-  { value: 'jayyid_jiddan', label: 'Jayyid Jiddan' },
-  { value: 'jayyid_plus', label: 'Jayyid +' },
-  { value: 'jayyid', label: 'Jayyid' },
-  { value: 'maqbul', label: 'Maqbul' },
-  { value: 'rosib', label: 'Rosib' },
-];
 
 const StudentDetail = () => {
   const { studentId } = useParams();
