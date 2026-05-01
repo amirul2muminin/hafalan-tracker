@@ -7,7 +7,6 @@ type MurojaahLog = Database['public']['Tables']['murojaah_logs']['Row'];
 type PersiapanUjianLog = Database['public']['Tables']['persiapan_ujian_logs']['Row'];
 type UjianLog = Database['public']['Tables']['ujian_logs']['Row'];
 
-type StudentInsert = Database['public']['Tables']['students']['Insert'];
 type HafalanBaruLogInsert = Database['public']['Tables']['hafalan_baru_logs']['Insert'];
 type PersiapanUjianLogInsert = Database['public']['Tables']['persiapan_ujian_logs']['Insert'];
 type UjianLogInsert = Database['public']['Tables']['ujian_logs']['Insert'];
