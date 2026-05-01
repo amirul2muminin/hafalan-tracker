@@ -14,11 +14,10 @@ export type Database = {
   }
   public: {
     Tables: {
-      daily_logs: {
+      hafalan_baru_logs: {
         Row: {
-          category: Database["public"]["Enums"]["log_category"]
           created_at: string
-          date: string
+          deleted_at: string | null
           from_line: number
           from_page: number
           id: string
@@ -29,12 +28,11 @@ export type Database = {
           to_line: number
           to_page: number
           total_lines: number
-          type: Database["public"]["Enums"]["log_type"]
+          updated_at: string
         }
         Insert: {
-          category: Database["public"]["Enums"]["log_category"]
           created_at?: string
-          date?: string
+          deleted_at?: string | null
           from_line: number
           from_page: number
           id?: string
@@ -45,12 +43,11 @@ export type Database = {
           to_line: number
           to_page: number
           total_lines: number
-          type: Database["public"]["Enums"]["log_type"]
+          updated_at?: string
         }
         Update: {
-          category?: Database["public"]["Enums"]["log_category"]
           created_at?: string
-          date?: string
+          deleted_at?: string | null
           from_line?: number
           from_page?: number
           id?: string
@@ -61,11 +58,11 @@ export type Database = {
           to_line?: number
           to_page?: number
           total_lines?: number
-          type?: Database["public"]["Enums"]["log_type"]
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "daily_logs_student_id_fkey"
+            foreignKeyName: "hafalan_baru_logs_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -73,77 +70,86 @@ export type Database = {
           },
         ]
       }
-      exam_sessions: {
+      murojaah_logs: {
         Row: {
           created_at: string
-          exam_date: string
-          exam_type: Database["public"]["Enums"]["exam_type"]
+          deleted_at: string | null
           id: string
-          juz_end: number | null
-          juz_start: number | null
-          status: Database["public"]["Enums"]["exam_status"]
+          juz_id: number
+          note: string | null
           student_id: string
+          total_pages: number
+          updated_at: string
         }
         Insert: {
           created_at?: string
-          exam_date?: string
-          exam_type: Database["public"]["Enums"]["exam_type"]
+          deleted_at?: string | null
           id?: string
-          juz_end?: number | null
-          juz_start?: number | null
-          status?: Database["public"]["Enums"]["exam_status"]
+          juz_id: number
+          note?: string | null
           student_id: string
+          total_pages: number
+          updated_at?: string
         }
         Update: {
           created_at?: string
-          exam_date?: string
+          deleted_at?: string | null
+          id?: string
+          juz_id?: number
+          note?: string | null
+          student_id?: string
+          total_pages?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "murojaah_logs_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      persiapan_ujian_logs: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          exam_type: Database["public"]["Enums"]["exam_type"]
+          id: string
+          juz_id: number
+          juz_part: number
+          note: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          exam_type: Database["public"]["Enums"]["exam_type"]
+          id?: string
+          juz_id: number
+          juz_part: number
+          note?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
           exam_type?: Database["public"]["Enums"]["exam_type"]
           id?: string
-          juz_end?: number | null
-          juz_start?: number | null
-          status?: Database["public"]["Enums"]["exam_status"]
+          juz_id?: number
+          juz_part?: number
+          note?: string | null
           student_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "exam_sessions_student_id_fkey"
+            foreignKeyName: "persiapan_ujian_logs_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      murojaah_cycles: {
-        Row: {
-          created_at: string
-          current_day: number
-          current_pages: number
-          id: string
-          last_completed_date: string | null
-          student_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_day?: number
-          current_pages?: number
-          id?: string
-          last_completed_date?: string | null
-          student_id: string
-        }
-        Update: {
-          created_at?: string
-          current_day?: number
-          current_pages?: number
-          id?: string
-          last_completed_date?: string | null
-          student_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "murojaah_cycles_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: true
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -152,6 +158,7 @@ export type Database = {
       student_progress: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           last_juz_id: number | null
           last_line: number | null
@@ -164,6 +171,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           last_juz_id?: number | null
           last_line?: number | null
@@ -176,6 +184,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           last_juz_id?: number | null
           last_line?: number | null
@@ -199,52 +208,70 @@ export type Database = {
       students: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           name: string
           role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name: string
           role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name?: string
           role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
         }
         Relationships: []
       }
-      target_hafalan: {
+      ujian_logs: {
         Row: {
           created_at: string
-          deadline: string
+          deleted_at: string | null
+          exam_type: Database["public"]["Enums"]["exam_type"]
           id: string
+          juz_id: number
+          juz_part: number
+          note: string | null
+          result: Database["public"]["Enums"]["exam_result"]
           student_id: string
-          target_type: Database["public"]["Enums"]["target_type"]
-          target_value: number
+          updated_at: string
         }
         Insert: {
           created_at?: string
-          deadline: string
+          deleted_at?: string | null
+          exam_type: Database["public"]["Enums"]["exam_type"]
           id?: string
+          juz_id: number
+          juz_part: number
+          note?: string | null
+          result: Database["public"]["Enums"]["exam_result"]
           student_id: string
-          target_type: Database["public"]["Enums"]["target_type"]
-          target_value: number
+          updated_at?: string
         }
         Update: {
           created_at?: string
-          deadline?: string
+          deleted_at?: string | null
+          exam_type?: Database["public"]["Enums"]["exam_type"]
           id?: string
+          juz_id?: number
+          juz_part?: number
+          note?: string | null
+          result?: Database["public"]["Enums"]["exam_result"]
           student_id?: string
-          target_type?: Database["public"]["Enums"]["target_type"]
-          target_value?: number
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "target_hafalan_student_id_fkey"
+            foreignKeyName: "ujian_logs_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -260,11 +287,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      exam_status: "pending" | "passed" | "failed"
+      exam_result:
+        | "mumtaz"
+        | "jayyid_jiddan_plus"
+        | "jayyid_jiddan"
+        | "jayyid_plus"
+        | "jayyid"
+        | "maqbul"
+        | "rosib"
       exam_type: "quarter_juz" | "half_juz" | "one_juz" | "five_juz"
-      log_category: "hafalan_baru" | "murojaah"
-      log_type: "setoran" | "persiapan_ujian" | "ujian"
-      target_type: "juz" | "page" | "line"
       user_role: "student" | "teacher" | "examiner"
     }
     CompositeTypes: {
@@ -393,11 +424,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      exam_status: ["pending", "passed", "failed"],
+      exam_result: [
+        "mumtaz",
+        "jayyid_jiddan_plus",
+        "jayyid_jiddan",
+        "jayyid_plus",
+        "jayyid",
+        "maqbul",
+        "rosib",
+      ],
       exam_type: ["quarter_juz", "half_juz", "one_juz", "five_juz"],
-      log_category: ["hafalan_baru", "murojaah"],
-      log_type: ["setoran", "persiapan_ujian", "ujian"],
-      target_type: ["juz", "page", "line"],
       user_role: ["student", "teacher", "examiner"],
     },
   },
