@@ -7,7 +7,6 @@ type MurojaahLog = Database['public']['Tables']['murojaah_logs']['Row'];
 type PersiapanUjianLog = Database['public']['Tables']['persiapan_ujian_logs']['Row'];
 type UjianLog = Database['public']['Tables']['ujian_logs']['Row'];
 
-type StudentInsert = Database['public']['Tables']['students']['Insert'];
 type HafalanBaruLogInsert = Database['public']['Tables']['hafalan_baru_logs']['Insert'];
 type PersiapanUjianLogInsert = Database['public']['Tables']['persiapan_ujian_logs']['Insert'];
 type UjianLogInsert = Database['public']['Tables']['ujian_logs']['Insert'];
@@ -83,7 +82,7 @@ export async function fetchHafalanBaruLogs(
   return data || [];
 }
 
-export async function insertHafalanBaruLog(log: Omit<HafalanBaruLog, 'id' | 'created_at'>): Promise<HafalanBaruLog> {
+export async function insertHafalanBaruLog(log: HafalanBaruLogInsert): Promise<HafalanBaruLog> {
   const { data, error } = await supabase.from('hafalan_baru_logs').insert(log as any).select().single();
   if (error) throw error;
   return data;
@@ -141,7 +140,7 @@ export async function fetchPersiapanUjianLogs(
   return data || [];
 }
 
-export async function insertPersiapanUjianLog(log: Omit<PersiapanUjianLog, 'id' | 'created_at'>): Promise<PersiapanUjianLog> {
+export async function insertPersiapanUjianLog(log: PersiapanUjianLogInsert): Promise<PersiapanUjianLog> {
   const { data, error } = await supabase.from('persiapan_ujian_logs').insert(log as any).select().single();
   if (error) throw error;
   return data;
@@ -196,7 +195,7 @@ export async function fetchUjianLogs(
   return data || [];
 }
 
-export async function insertUjianLog(log: Omit<UjianLog, 'id' | 'created_at'>): Promise<UjianLog> {
+export async function insertUjianLog(log: UjianLogInsert): Promise<UjianLog> {
   const { data, error } = await supabase.from('ujian_logs').insert(log as any).select().single();
   if (error) throw error;
   return data;
@@ -251,7 +250,7 @@ export async function fetchMurojaahLogs(
   return data || [];
 }
 
-export async function insertMurojaahLog(log: Omit<MurojaahLog, 'id' | 'created_at'>): Promise<MurojaahLog> {
+export async function insertMurojaahLog(log: MurojaahLogInsert): Promise<MurojaahLog> {
   const { data, error } = await supabase.from('murojaah_logs').insert(log as any).select().single();
   if (error) throw error;
   return data;

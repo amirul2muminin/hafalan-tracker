@@ -60,3 +60,5 @@ export function StatCard({
     </div>
   );
 }
+
+export default StatCard;
